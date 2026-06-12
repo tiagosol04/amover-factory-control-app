@@ -12,83 +12,70 @@ interface ApiService {
     @GET("api/auth/me")
     suspend fun me(): MeResponse
 
-    // ── Ordens de Produção ──
-    @GET("api/ordens")
+    // ── Dashboard & Alertas ──
+    @GET("api/controlo-fabrica/dashboard")
+    suspend fun getDashboardResumo(): DashboardResumoDto
+
+    @GET("api/controlo-fabrica/alertas")
+    suspend fun getAlertas(): AlertasApiResponse
+
+    // ── Ordens (supervisão / controlo) ──
+    @GET("api/controlo-fabrica/ordens")
     suspend fun getOrdens(@Query("estado") estado: Int? = null): List<OrdemProducaoDto>
 
-    @GET("api/ordens/{id}")
+    @GET("api/controlo-fabrica/ordens/{id}")
     suspend fun getOrdem(@Path("id") id: Int): OrdemProducaoDto
 
     @GET("api/ordens/{id}/resumo")
     suspend fun getResumo(@Path("id") id: Int): OrdemResumoDto
 
+    @GET("api/controlo-fabrica/ordens/{id}/ficha")
+    suspend fun getOrdemFicha(@Path("id") id: Int): OrdemFichaDto
+
     @GET("api/ordens/{id}/motas")
     suspend fun getMotasDaOrdem(@Path("id") id: Int): List<MotaDto>
 
-    @POST("api/ordens/{id}/motas")
-    suspend fun criarMota(@Path("id") id: Int, @Body body: CriarMotaRequest): IdResponse
-
-    @POST("api/ordens/from-encomenda/{encomendaId}")
-    suspend fun criarOrdensFromEncomenda(@Path("encomendaId") encomendaId: Int): List<IdResponse>
-
-    @PUT("api/ordens/{id}/estado")
-    suspend fun updateEstadoOrdem(@Path("id") id: Int, @Body body: UpdateEstadoRequest)
-
-    @POST("api/ordens/{id}/iniciar")
-    suspend fun iniciarOrdem(@Path("id") id: Int): IniciarOrdemResponse
-
-    @POST("api/ordens/{id}/finalizar")
+    @POST("api/controlo-fabrica/ordens/{id}/finalizar")
     suspend fun finalizarOrdem(@Path("id") id: Int): FinalizarOrdemResponse
 
-    @GET("api/ordens/{id}/ficha")
-    suspend fun getOrdemFicha(@Path("id") id: Int): OrdemFichaDto
-
-    @POST("api/ordens/{id}/bloquear")
+    @POST("api/controlo-fabrica/ordens/{id}/bloquear")
     suspend fun bloquearOrdem(@Path("id") id: Int, @Body body: BloquearOrdemRequest): BloquearOrdemResponse
 
-    @POST("api/ordens/{id}/desbloquear")
+    @POST("api/controlo-fabrica/ordens/{id}/desbloquear")
     suspend fun desbloquearOrdem(@Path("id") id: Int, @Body body: DesbloquearOrdemRequest): DesbloquearOrdemResponse
 
-    @GET("api/ordens/{id}/historico")
+    @GET("api/controlo-fabrica/ordens/{id}/historico")
     suspend fun getOrdemHistorico(@Path("id") id: Int): HistoricoOrdemResponse
-
-    @POST("api/ordens/{id}/marcar-embalada")
-    suspend fun marcarEmbalada(@Path("id") id: Int): MarcarEmbalagemResponse
-
-    @POST("api/ordens/{id}/marcar-enviada")
-    suspend fun marcarEnviada(@Path("id") id: Int): MarcarEnviadaResponse
-
-    @GET("api/ordens/prontos-expedicao")
-    suspend fun getProntosExpedicao(): ProntosExpedicaoResponse
 
     @GET("api/ordens/{id}/utilizadores")
     suspend fun getOrdemUtilizadores(@Path("id") id: Int): OrdemUtilizadoresResponse
 
-    @GET("api/dashboard/resumo")
-    suspend fun getDashboardResumo(): DashboardResumoDto
+    // ── Controlo de qualidade ──
+    @GET("api/controlo-fabrica/ordens/{ordemId}/controlo-qualidade")
+    suspend fun getChecklistsDaOrdem(@Path("ordemId") ordemId: Int): ChecklistsStatusDto
 
-    @GET("api/alertas")
-    suspend fun getAlertas(): AlertasApiResponse
+    @PUT("api/controlo-fabrica/ordens/{ordemId}/controlo-qualidade/{checklistId}")
+    suspend fun updateChecklistControlo(
+        @Path("ordemId") ordemId: Int,
+        @Path("checklistId") checklistId: Int,
+        @Body body: UpdateChecklistRequest
+    )
 
-    // ── Motas / VIN / peças SN ──
-    @GET("api/motas")
-    suspend fun getMotas(@Query("estado") estado: Int? = null, @Query("ordemId") ordemId: Int? = null, @Query("semVin") semVin: Boolean? = null): List<MotaDto>
+    // ── Expedição ──
+    @GET("api/controlo-fabrica/expedicao")
+    suspend fun getProntosExpedicao(): ProntosExpedicaoResponse
 
-    @POST("api/motas")
-    suspend fun criarMotaDireto(@Body body: CriarMotaRequest): IdResponse
+    @POST("api/controlo-fabrica/expedicao/{id}/marcar-embalada")
+    suspend fun marcarProntaExpedicao(@Path("id") id: Int): MarcarEmbalagemResponse
 
-    @GET("api/motas/{id}")
-    suspend fun getMota(@Path("id") id: Int): MotaDto
+    @POST("api/controlo-fabrica/expedicao/{id}/marcar-enviada")
+    suspend fun marcarEnviada(@Path("id") id: Int): MarcarEnviadaResponse
 
-    @GET("api/motas/by-vin/{vin}")
-    suspend fun getMotaByVin(@Path("vin") vin: String): MotaDto
+    // ── Rastreabilidade (leitura) ──
+    @GET("api/controlo-fabrica/rastreabilidade/{vin}")
+    suspend fun getMotaByVin(@Path("vin") vin: String): RastreabilidadeDto
 
-    @PUT("api/motas/{id}/estado")
-    suspend fun updateEstadoMota(@Path("id") id: Int, @Body body: UpdateEstadoRequest)
-
-    @PUT("api/motas/{id}/identificacao")
-    suspend fun updateVin(@Path("id") id: Int, @Body body: UpdateVinRequest): UpdateVinResponse
-
+    // ── Unidades / motas (leitura) ──
     @GET("api/motas/{id}/pecas-sn")
     suspend fun getMotaPecasSn(@Path("id") id: Int): List<MotaPecaSnDto>
 
@@ -98,41 +85,20 @@ interface ApiService {
     @GET("api/motas/{id}/pecas-fixas")
     suspend fun getMotaPecasFixas(@Path("id") id: Int): PecaFixaResponse
 
-    @PUT("api/motas/{id}")
-    suspend fun updateMota(@Path("id") id: Int, @Body body: CriarMotaRequest): MotaDto
-
-    @POST("api/motas/{id}/pecas-sn")
-    suspend fun addPecaSn(@Path("id") id: Int, @Body body: AddPecaSnRequest): IdResponse
-
-    @DELETE("api/motas/pecas-sn/{idMotaPecaSn}")
-    suspend fun deleteMotaPecaSn(@Path("idMotaPecaSn") id: Int)
-
-    // ── Peças ──
-    @GET("api/pecas")
-    suspend fun getPecas(): List<PecaDto>
-
-    // ── Checklists ──
-    @GET("api/checklists")
-    suspend fun getChecklists(): List<ChecklistDto>
-
-    @GET("api/ordens/{ordemId}/checklists")
-    suspend fun getChecklistsDaOrdem(@Path("ordemId") ordemId: Int): ChecklistsStatusDto
-
-    @PUT("api/ordens/{ordemId}/checklists/montagem/{checklistId}")
-    suspend fun updateChecklistMontagem(@Path("ordemId") ordemId: Int, @Path("checklistId") checklistId: Int, @Body body: UpdateChecklistRequest)
-
-    @PUT("api/ordens/{ordemId}/checklists/embalagem/{checklistId}")
-    suspend fun updateChecklistEmbalagem(@Path("ordemId") ordemId: Int, @Path("checklistId") checklistId: Int, @Body body: UpdateChecklistRequest)
-
-    @PUT("api/ordens/{ordemId}/checklists/controlo/{checklistId}")
-    suspend fun updateChecklistControlo(@Path("ordemId") ordemId: Int, @Path("checklistId") checklistId: Int, @Body body: UpdateChecklistRequest)
-
     // ── Serviços / Manutenção / Garantias ──
     @GET("api/servicos/meta")
     suspend fun getServicosMeta(): ServicosMetaResponse
 
     @GET("api/servicos")
-    suspend fun getServicos(@Query("estado") estado: Int? = null, @Query("motaId") motaId: Int? = null, @Query("modeloId") modeloId: Int? = null, @Query("tipo") tipo: Int? = null, @Query("vin") vin: String? = null, @Query("emAberto") emAberto: Boolean? = null, @Query("q") q: String? = null): List<ServicoDto>
+    suspend fun getServicos(
+        @Query("estado") estado: Int? = null,
+        @Query("motaId") motaId: Int? = null,
+        @Query("modeloId") modeloId: Int? = null,
+        @Query("tipo") tipo: Int? = null,
+        @Query("vin") vin: String? = null,
+        @Query("emAberto") emAberto: Boolean? = null,
+        @Query("q") q: String? = null
+    ): List<ServicoDto>
 
     @GET("api/servicos/em-aberto")
     suspend fun getServicosEmAberto(): ServicosEmAbertoResponse
@@ -170,22 +136,19 @@ interface ApiService {
     @GET("api/servicos/modelos/{idModelo}/garantias")
     suspend fun getGarantiasByModelo(@Path("idModelo") idModelo: Int): GarantiasModeloResponse
 
-    // ── Encomendas ──
+    // ── Encomendas (leitura) ──
     @GET("api/encomendas")
-    suspend fun getEncomendas(@Query("clienteId") clienteId: Int? = null, @Query("estado") estado: Int? = null): List<EncomendaDto>
+    suspend fun getEncomendas(
+        @Query("clienteId") clienteId: Int? = null,
+        @Query("estado") estado: Int? = null
+    ): List<EncomendaDto>
 
     @GET("api/encomendas/{id}")
     suspend fun getEncomenda(@Path("id") id: Int): EncomendaDto
 
-    @POST("api/encomendas")
-    suspend fun criarEncomenda(@Body body: CreateEncomendaRequest): IdResponse
-
-    @PUT("api/encomendas/{id}")
-    suspend fun updateEncomenda(@Path("id") id: Int, @Body body: CreateEncomendaRequest)
-
     // ── Utilizadores / Modelos / Clientes ──
-    @GET("api/utilizadores")
-    suspend fun getUtilizadores(): List<UtilizadorDto>
+    @GET("api/controlo-fabrica/utilizadores")
+    suspend fun getUtilizadores(): UtilizadoresListResponse
 
     @GET("api/utilizadores/{id}")
     suspend fun getUtilizadorDetalhe(@Path("id") id: Int): UtilizadorDetailResponseDto
@@ -194,7 +157,10 @@ interface ApiService {
     suspend fun updateUtilizadorStatus(@Path("id") id: Int, @Body body: UpdateUserStatusRequest)
 
     @GET("api/utilizadores/{id}/motas")
-    suspend fun getMotasDoUtilizador(@Path("id") id: Int, @Query("ativasOnly") ativasOnly: Boolean = true): UtilizadorMotasResponseDto
+    suspend fun getMotasDoUtilizador(
+        @Path("id") id: Int,
+        @Query("ativasOnly") ativasOnly: Boolean = true
+    ): UtilizadorMotasResponseDto
 
     @GET("api/modelos")
     suspend fun getModelos(): List<ModeloDto>

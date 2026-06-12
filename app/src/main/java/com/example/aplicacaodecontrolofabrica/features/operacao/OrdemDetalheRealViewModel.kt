@@ -3,10 +3,7 @@ package com.example.aplicacaodecontrolofabrica.features.operacao
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.aplicacaodecontrolofabrica.data.dto.AddPecaSnRequest
-import com.example.aplicacaodecontrolofabrica.data.dto.CriarMotaRequest
 import com.example.aplicacaodecontrolofabrica.data.dto.MotaPecaSnDto
-import com.example.aplicacaodecontrolofabrica.data.dto.PecaDto
 import com.example.aplicacaodecontrolofabrica.data.mapper.DtoHelpers
 import com.example.aplicacaodecontrolofabrica.data.mapper.toChecklistExecucoesPorGrupo
 import com.example.aplicacaodecontrolofabrica.data.model.ChecklistExecucao
@@ -81,8 +78,6 @@ data class FichaOperacionalUiState(
     val checklistsEmbalagem: List<ChecklistExecucao> = emptyList(),
     val checklistsControlo: List<ChecklistExecucao> = emptyList(),
 
-    val pecasDisponiveis: List<PecaDto> = emptyList(),
-
     val historicoItems: List<HistoricoItemUi> = emptyList(),
     val utilizadoresAtribuidos: Int = 0,
 
@@ -137,9 +132,6 @@ class OrdemDetalheRealViewModel(
         }
         val checklistsDeferred = viewModelScope.async {
             runCatching { fabricaRepository.getChecklistsDaOrdem(ordemId) }.getOrNull()
-        }
-        val pecasDeferred = viewModelScope.async {
-            runCatching { fabricaRepository.getPecas() }.getOrDefault(emptyList())
         }
         val historicoDeferred = viewModelScope.async {
             runCatching { fabricaRepository.getOrdemHistorico(ordemId) }.getOrNull()
@@ -247,7 +239,6 @@ class OrdemDetalheRealViewModel(
         }
 
         val checklistsStatus = checklistsDeferred.await()
-        val pecasDisponiveis = pecasDeferred.await()
         val historicoResponse = historicoDeferred.await()
         val utilizadoresData = utilizadoresDeferred.await()
 
@@ -351,7 +342,6 @@ class OrdemDetalheRealViewModel(
             checklistsMontagem = checklistsPorGrupo[TipoChecklistUi.MONTAGEM] ?: emptyList(),
             checklistsEmbalagem = checklistsPorGrupo[TipoChecklistUi.EMBALAGEM] ?: emptyList(),
             checklistsControlo = checklistsPorGrupo[TipoChecklistUi.CONTROLO] ?: emptyList(),
-            pecasDisponiveis = pecasDisponiveis,
             historicoItems = historicoItems,
             avisoHistorico = avisoHistorico,
             utilizadoresAtribuidos = utilizadoresAtribuidos,
@@ -360,25 +350,6 @@ class OrdemDetalheRealViewModel(
     }
 
     // ── Ações de estado da ordem ──
-
-    fun iniciarOrdem() {
-        val ordemId = _uiState.value.ordemId
-        if (ordemId <= 0) return
-        viewModelScope.launch {
-            _uiState.update { it.copy(isUpdating = true, errorMessage = null, actionSuccess = null) }
-            runCatching { fabricaRepository.iniciarOrdem(ordemId) }
-                .onSuccess {
-                    _uiState.update { it.copy(actionSuccess = "Ordem iniciada com sucesso.") }
-                    load(ordemId)
-                }
-                .onFailure { ex ->
-                    Log.e(TAG, "Falha ao iniciar ordem $ordemId", ex)
-                    _uiState.update {
-                        it.copy(isUpdating = false, errorMessage = ex.message ?: "Não foi possível iniciar a ordem.")
-                    }
-                }
-        }
-    }
 
     fun finalizarOrdem() {
         val ordemId = _uiState.value.ordemId
@@ -440,25 +411,25 @@ class OrdemDetalheRealViewModel(
         }
     }
 
-    fun marcarEmbalada() {
+    fun marcarProntaExpedicao() {
         val ordemId = _uiState.value.ordemId
         if (ordemId <= 0) return
         viewModelScope.launch {
             _uiState.update { it.copy(actionLoading = true, errorMessage = null, actionSuccess = null, avisoExpedicao = null) }
-            runCatching { fabricaRepository.marcarEmbalada(ordemId) }
+            runCatching { fabricaRepository.marcarProntaExpedicao(ordemId) }
                 .onSuccess { response ->
                     _uiState.update {
                         it.copy(
-                            actionSuccess = response.message ?: "Marcada como embalada.",
+                            actionSuccess = response.message ?: "Marcada como pronta para expedição.",
                             avisoExpedicao = response.aviso
                         )
                     }
                     load(ordemId)
                 }
                 .onFailure { ex ->
-                    Log.e(TAG, "Falha ao marcar ordem $ordemId como embalada", ex)
+                    Log.e(TAG, "Falha ao marcar ordem $ordemId como pronta para expedição", ex)
                     _uiState.update {
-                        it.copy(actionLoading = false, errorMessage = ex.message ?: "Não foi possível marcar como embalada.")
+                        it.copy(actionLoading = false, errorMessage = ex.message ?: "Não foi possível marcar como pronta para expedição.")
                     }
                 }
         }
@@ -489,109 +460,20 @@ class OrdemDetalheRealViewModel(
         }
     }
 
-    // ── Unidades (motas) ──
-
-    fun registarMota(vin: String, cor: String) {
-        val ordemId = _uiState.value.ordemId
-        if (ordemId <= 0) return
-        val corFinal = cor.trim().ifBlank { "Indefinida" }
-        viewModelScope.launch {
-            _uiState.update { it.copy(actionLoading = true, errorMessage = null, actionSuccess = null) }
-            runCatching {
-                fabricaRepository.criarMotaNaOrdem(
-                    ordemId,
-                    CriarMotaRequest(
-                        numeroIdentificacao = vin.trim(),
-                        cor = corFinal,
-                        quilometragem = 0.0,
-                        estado = 0  // 0 = Em Produção (API força Estado=0, mas a app fica coerente)
-                    )
-                )
-            }.onSuccess {
-                _uiState.update { it.copy(actionSuccess = "Unidade registada com sucesso.") }
-                load(ordemId)
-            }.onFailure { ex ->
-                Log.e(TAG, "Falha ao registar mota na ordem $ordemId", ex)
-                _uiState.update {
-                    it.copy(actionLoading = false, errorMessage = ex.message ?: "Não foi possível registar a unidade.")
-                }
-            }
-        }
-    }
-
-    fun registarVin(motaId: Int, vin: String) {
-        val ordemId = _uiState.value.ordemId
-        if (ordemId <= 0 || motaId <= 0 || vin.isBlank()) return
-        viewModelScope.launch {
-            _uiState.update { it.copy(actionLoading = true, errorMessage = null, actionSuccess = null) }
-            runCatching { fabricaRepository.updateVin(motaId, vin.trim().uppercase()) }
-                .onSuccess {
-                    _uiState.update { it.copy(actionSuccess = "VIN registado: ${vin.trim().uppercase()}") }
-                    load(ordemId)
-                }
-                .onFailure { ex ->
-                    Log.e(TAG, "Falha ao registar VIN $vin na mota $motaId", ex)
-                    _uiState.update {
-                        it.copy(actionLoading = false, errorMessage = ex.message ?: "Não foi possível registar o VIN.")
-                    }
-                }
-        }
-    }
-
     // ── Checklists ──
 
-    fun toggleChecklist(tipo: String, checklistId: Int, concluido: Boolean) {
+    fun toggleChecklist(checklistId: Int, concluido: Boolean) {
         val ordemId = _uiState.value.ordemId
         if (ordemId <= 0 || checklistId <= 0) return
         val value = if (concluido) 1 else 0
         viewModelScope.launch {
             _uiState.update { it.copy(actionLoading = true, errorMessage = null) }
-            runCatching { fabricaRepository.updateChecklistValue(ordemId, tipo, checklistId, value) }
+            runCatching { fabricaRepository.updateChecklistControlo(ordemId, checklistId, value) }
                 .onSuccess { load(ordemId) }
                 .onFailure { ex ->
-                    Log.e(TAG, "Falha ao atualizar checklist $checklistId (tipo=$tipo)", ex)
+                    Log.e(TAG, "Falha ao atualizar checklist $checklistId", ex)
                     _uiState.update {
                         it.copy(actionLoading = false, errorMessage = ex.message ?: "Não foi possível atualizar o checklist.")
-                    }
-                }
-        }
-    }
-
-    // ── Peças com número de série ──
-
-    fun addPecaSn(motaId: Int, pecaId: Int, serialNumber: String) {
-        val ordemId = _uiState.value.ordemId
-        if (ordemId <= 0 || motaId <= 0 || pecaId <= 0 || serialNumber.isBlank()) return
-        viewModelScope.launch {
-            _uiState.update { it.copy(actionLoading = true, errorMessage = null, actionSuccess = null) }
-            runCatching {
-                fabricaRepository.addMotaPecaSn(
-                    motaId,
-                    AddPecaSnRequest(idPeca = pecaId, numeroSerie = serialNumber.trim())
-                )
-            }.onSuccess {
-                _uiState.update { it.copy(actionSuccess = "Peça com SN registada.") }
-                load(ordemId)
-            }.onFailure { ex ->
-                Log.e(TAG, "Falha ao adicionar peça SN $serialNumber à mota $motaId", ex)
-                _uiState.update {
-                    it.copy(actionLoading = false, errorMessage = ex.message ?: "Não foi possível registar a peça. Verifique se o número de série já existe.")
-                }
-            }
-        }
-    }
-
-    fun deletePecaSn(idMotaPecaSn: Int) {
-        val ordemId = _uiState.value.ordemId
-        if (ordemId <= 0 || idMotaPecaSn <= 0) return
-        viewModelScope.launch {
-            _uiState.update { it.copy(actionLoading = true, errorMessage = null) }
-            runCatching { fabricaRepository.deleteMotaPecaSn(idMotaPecaSn) }
-                .onSuccess { load(ordemId) }
-                .onFailure { ex ->
-                    Log.e(TAG, "Falha ao remover peça SN $idMotaPecaSn", ex)
-                    _uiState.update {
-                        it.copy(actionLoading = false, errorMessage = ex.message ?: "Não foi possível remover a peça.")
                     }
                 }
         }

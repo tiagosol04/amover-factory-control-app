@@ -7,56 +7,40 @@ class FabricaRepositoryImpl(
     private val api: ApiService
 ) : FabricaRepository {
 
+    // ── Dashboard & Alertas ──
+    override suspend fun getDashboardResumo() = api.getDashboardResumo()
+    override suspend fun getAlertas() = api.getAlertas()
+
     // ── Ordens ──
     override suspend fun getOrdens(estado: Int?) = api.getOrdens(estado)
     override suspend fun getOrdem(id: Int) = api.getOrdem(id)
     override suspend fun getOrdemResumo(id: Int) = api.getResumo(id)
-    override suspend fun criarOrdensFromEncomenda(encomendaId: Int) = api.criarOrdensFromEncomenda(encomendaId).mapNotNull { it.id }
-    override suspend fun updateOrdemEstado(id: Int, estado: Int) { api.updateEstadoOrdem(id, UpdateEstadoRequest(estado)) }
-    override suspend fun iniciarOrdem(id: Int) = api.iniciarOrdem(id)
-    override suspend fun finalizarOrdem(id: Int) = api.finalizarOrdem(id)
-    override suspend fun getMotasDaOrdem(ordemId: Int) = api.getMotasDaOrdem(ordemId)
-    override suspend fun criarMotaNaOrdem(ordemId: Int, body: CriarMotaRequest) = api.criarMota(ordemId, body).id ?: 0
     override suspend fun getOrdemFicha(id: Int) = api.getOrdemFicha(id)
+    override suspend fun getMotasDaOrdem(ordemId: Int) = api.getMotasDaOrdem(ordemId)
+    override suspend fun finalizarOrdem(id: Int) = api.finalizarOrdem(id)
     override suspend fun bloquearOrdem(id: Int, motivo: String) = api.bloquearOrdem(id, BloquearOrdemRequest(motivo))
     override suspend fun desbloquearOrdem(id: Int, resolucao: String?) = api.desbloquearOrdem(id, DesbloquearOrdemRequest(resolucao))
     override suspend fun getOrdemHistorico(id: Int) = api.getOrdemHistorico(id)
-    override suspend fun marcarEmbalada(id: Int) = api.marcarEmbalada(id)
-    override suspend fun marcarEnviada(id: Int) = api.marcarEnviada(id)
-    override suspend fun getProntosExpedicao() = api.getProntosExpedicao()
     override suspend fun getOrdemUtilizadores(id: Int) = api.getOrdemUtilizadores(id)
-    override suspend fun getDashboardResumo() = api.getDashboardResumo()
-    override suspend fun getAlertas() = api.getAlertas()
 
-    // ── Motas ──
-    override suspend fun getMotas() = api.getMotas()
-    override suspend fun getMota(motaId: Int) = api.getMota(motaId)
+    // ── Controlo de qualidade ──
+    override suspend fun getChecklistsDaOrdem(ordemId: Int) = api.getChecklistsDaOrdem(ordemId)
+    override suspend fun updateChecklistControlo(ordemId: Int, checklistId: Int, value: Int) {
+        api.updateChecklistControlo(ordemId, checklistId, UpdateChecklistRequest(value = value))
+    }
+
+    // ── Expedição ──
+    override suspend fun getProntosExpedicao() = api.getProntosExpedicao()
+    override suspend fun marcarProntaExpedicao(id: Int) = api.marcarProntaExpedicao(id)
+    override suspend fun marcarEnviada(id: Int) = api.marcarEnviada(id)
+
+    // ── Rastreabilidade ──
     override suspend fun getMotaByVin(vin: String) = api.getMotaByVin(vin)
-    override suspend fun criarMotaDireto(body: CriarMotaRequest) = api.criarMotaDireto(body).id ?: 0
-    override suspend fun updateMotaEstado(id: Int, estado: Int) { api.updateEstadoMota(id, UpdateEstadoRequest(estado)) }
-    override suspend fun updateVin(id: Int, vin: String) = api.updateVin(id, UpdateVinRequest(vin))
+
+    // ── Unidades / motas (leitura) ──
     override suspend fun getMotaPecasSn(motaId: Int) = api.getMotaPecasSn(motaId)
     override suspend fun getMotaPecasSnResumo(motaId: Int) = api.getMotaPecasSnResumo(motaId)
-    override suspend fun addMotaPecaSn(motaId: Int, body: AddPecaSnRequest) = api.addPecaSn(motaId, body).id ?: 0
-    override suspend fun deleteMotaPecaSn(idMotaPecaSn: Int) { api.deleteMotaPecaSn(idMotaPecaSn) }
     override suspend fun getMotaPecasFixas(motaId: Int) = api.getMotaPecasFixas(motaId)
-    override suspend fun updateMota(motaId: Int, body: CriarMotaRequest) = api.updateMota(motaId, body)
-
-    // ── Peças ──
-    override suspend fun getPecas() = api.getPecas()
-
-    // ── Checklists ──
-    override suspend fun getChecklists() = api.getChecklists()
-    override suspend fun getChecklistsDaOrdem(ordemId: Int) = api.getChecklistsDaOrdem(ordemId)
-    override suspend fun updateChecklistValue(ordemId: Int, tipo: String, checklistId: Int, value: Int) {
-        val body = UpdateChecklistRequest(value = value)
-        when (tipo.trim().lowercase()) {
-            "montagem" -> api.updateChecklistMontagem(ordemId, checklistId, body)
-            "embalagem" -> api.updateChecklistEmbalagem(ordemId, checklistId, body)
-            "controlo", "controle" -> api.updateChecklistControlo(ordemId, checklistId, body)
-            else -> error("Tipo de checklist inválido: $tipo")
-        }
-    }
 
     // ── Serviços ──
     override suspend fun getServicosMeta() = api.getServicosMeta()
@@ -74,10 +58,9 @@ class FabricaRepositoryImpl(
     // ── Encomendas ──
     override suspend fun getEncomendas(clienteId: Int?, estado: Int?) = api.getEncomendas(clienteId, estado)
     override suspend fun getEncomenda(id: Int) = api.getEncomenda(id)
-    override suspend fun criarEncomenda(body: CreateEncomendaRequest) = api.criarEncomenda(body).id ?: 0
 
     // ── Contexto ──
-    override suspend fun getUtilizadores() = api.getUtilizadores()
+    override suspend fun getUtilizadores() = api.getUtilizadores().utilizadores
     override suspend fun getUtilizadorDetalhe(id: Int) = api.getUtilizadorDetalhe(id)
     override suspend fun updateDisponibilidadeUtilizador(id: Int, ativo: Boolean) { api.updateUtilizadorStatus(id, UpdateUserStatusRequest(ativo)) }
     override suspend fun getMotasDoUtilizador(id: Int, ativasOnly: Boolean) = api.getMotasDoUtilizador(id, ativasOnly)

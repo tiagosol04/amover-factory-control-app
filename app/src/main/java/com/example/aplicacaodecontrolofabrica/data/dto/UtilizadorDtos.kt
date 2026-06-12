@@ -115,3 +115,14 @@ data class InativarAssociacaoRequest(
     @SerializedName(value = "motivoInativacao", alternate = ["MotivoInativacao"])
     val motivoInativacao: String? = null
 )
+
+data class UtilizadoresListResponse(
+    @SerializedName(value = "total", alternate = ["Total"])
+    val total: Int = 0,
+
+    @SerializedName(value = "totalAtivos", alternate = ["TotalAtivos"])
+    val totalAtivos: Int = 0,
+
+    @SerializedName(value = "utilizadores", alternate = ["Utilizadores"])
+    val utilizadores: List<UtilizadorDto> = emptyList()
+)

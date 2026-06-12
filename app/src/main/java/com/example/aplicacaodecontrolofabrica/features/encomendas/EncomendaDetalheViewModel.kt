@@ -114,32 +114,6 @@ class EncomendaDetalheViewModel(
         }
     }
 
-    fun criarOrdensFromEncomenda(encomendaId: Int) {
-        if (_uiState.value.actionLoading) return
-        viewModelScope.launch {
-            _uiState.update { it.copy(actionLoading = true, actionError = null, actionSuccess = null) }
-            runCatching { repo.criarOrdensFromEncomenda(encomendaId) }
-                .onSuccess { idsCreated ->
-                    _uiState.update {
-                        it.copy(
-                            actionLoading = false,
-                            actionSuccess = "${idsCreated.size} ordem(ns) criada(s) com sucesso."
-                        )
-                    }
-                    load(encomendaId)
-                }
-                .onFailure { ex ->
-                    Log.e("EncomendaDetalheVM", "Falha ao criar ordens da encomenda $encomendaId", ex)
-                    _uiState.update {
-                        it.copy(
-                            actionLoading = false,
-                            actionError = ex.message ?: "Erro ao criar ordens."
-                        )
-                    }
-                }
-        }
-    }
-
     fun clearFeedback() {
         _uiState.update { it.copy(actionSuccess = null, actionError = null) }
     }

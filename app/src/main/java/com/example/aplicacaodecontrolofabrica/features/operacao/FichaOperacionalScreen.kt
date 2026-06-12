@@ -232,56 +232,12 @@ private fun TabUnidades(
     access: RoleAccessUi?,
     viewModel: OrdemDetalheRealViewModel
 ) {
-    var showRegistarMota by remember { mutableStateOf(false) }
-    var vinParaEditar by remember { mutableStateOf<Int?>(null) }
-    var motaIdParaVin by remember { mutableStateOf(0) }
-    var showDeleteConfirm by remember { mutableStateOf<Int?>(null) }
-
-    val podeRegistar = access?.canRegistarUnidade == true && !uiState.concluida
-    val podeVin = access?.canRegistarVin == true && !uiState.concluida
-
-    // Diálogo registar mota
-    if (showRegistarMota) {
-        RegistarMotaDialog(
-            onConfirm = { vin, cor ->
-                viewModel.registarMota(vin, cor)
-                showRegistarMota = false
-            },
-            onDismiss = { showRegistarMota = false }
-        )
-    }
-
-    // Diálogo registar VIN
-    if (vinParaEditar != null) {
-        RegistarVinDialog(
-            motaId = motaIdParaVin,
-            vinAtual = uiState.motasFicha.find { it.motaId == motaIdParaVin }?.vin ?: "",
-            onConfirm = { motaId, vin ->
-                viewModel.registarVin(motaId, vin)
-                vinParaEditar = null
-            },
-            onDismiss = { vinParaEditar = null }
-        )
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        if (podeRegistar) {
-            Button(
-                onClick = { showRegistarMota = true },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.actionLoading && !uiState.isUpdating,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("  Registar Nova Unidade")
-            }
-        }
-
         if (uiState.motasFicha.isEmpty()) {
             Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                 Text("Sem unidades registadas nesta ordem.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -305,14 +261,6 @@ private fun TabUnidades(
                             InfoRow("Cor", mota.cor ?: "—")
                             InfoRow("Estado", mota.estado)
                             InfoRow("Peças SN", "${mota.pecasSn.size} registada(s)")
-                            if (podeVin) {
-                                TextButton(onClick = {
-                                    motaIdParaVin = mota.motaId
-                                    vinParaEditar = mota.motaId
-                                }) {
-                                    Text(if (mota.vin != null) "Alterar VIN" else "Registar VIN")
-                                }
-                            }
                         }
                     }
                 }
@@ -343,17 +291,17 @@ private fun TabChecklists(
             titulo = "Montagem",
             itens = uiState.checklistsMontagem,
             tipo = "montagem",
-            podeMarcar = podeMarcar,
+            podeMarcar = false,
             isLoading = uiState.actionLoading,
-            onToggle = { checklistId, concluido -> viewModel.toggleChecklist("montagem", checklistId, concluido) }
+            onToggle = { _, _ -> }
         )
         ChecklistGrupo(
             titulo = "Embalagem",
             itens = uiState.checklistsEmbalagem,
             tipo = "embalagem",
-            podeMarcar = podeMarcar,
+            podeMarcar = false,
             isLoading = uiState.actionLoading,
-            onToggle = { checklistId, concluido -> viewModel.toggleChecklist("embalagem", checklistId, concluido) }
+            onToggle = { _, _ -> }
         )
         ChecklistGrupo(
             titulo = "Controlo Final",
@@ -361,7 +309,7 @@ private fun TabChecklists(
             tipo = "controlo",
             podeMarcar = podeMarcar,
             isLoading = uiState.actionLoading,
-            onToggle = { checklistId, concluido -> viewModel.toggleChecklist("controlo", checklistId, concluido) }
+            onToggle = { checklistId, concluido -> viewModel.toggleChecklist(checklistId, concluido) }
         )
 
         if (uiState.checklistsMontagem.isEmpty() && uiState.checklistsEmbalagem.isEmpty() && uiState.checklistsControlo.isEmpty()) {
@@ -381,38 +329,6 @@ private fun TabPecasSn(
     access: RoleAccessUi?,
     viewModel: OrdemDetalheRealViewModel
 ) {
-    val podeRegistar = access?.canRegistarPecasSn == true && !uiState.concluida
-    var showAddDialog by remember { mutableStateOf<Int?>(null) } // motaId
-    var deleteConfirm by remember { mutableStateOf<Int?>(null) } // idMotaPecaSn
-
-    // Diálogo adicionar peça SN
-    showAddDialog?.let { motaId ->
-        AddPecaSnDialog(
-            pecasDisponiveis = uiState.pecasDisponiveis,
-            onConfirm = { pecaId, sn ->
-                viewModel.addPecaSn(motaId, pecaId, sn)
-                showAddDialog = null
-            },
-            onDismiss = { showAddDialog = null }
-        )
-    }
-
-    // Diálogo confirmar remoção
-    deleteConfirm?.let { id ->
-        AlertDialog(
-            onDismissRequest = { deleteConfirm = null },
-            title = { Text("Remover peça SN") },
-            text = { Text("Confirmar remoção deste registo de número de série?") },
-            confirmButton = {
-                Button(
-                    onClick = { viewModel.deletePecaSn(id); deleteConfirm = null },
-                    colors = ButtonDefaults.buttonColors(containerColor = FactoryAlert)
-                ) { Text("Remover") }
-            },
-            dismissButton = { TextButton(onClick = { deleteConfirm = null }) { Text("Cancelar") } }
-        )
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -422,7 +338,7 @@ private fun TabPecasSn(
     ) {
         if (uiState.motasFicha.isEmpty()) {
             Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                Text("Sem unidades registadas. Registe primeiro uma unidade.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Sem unidades registadas.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             return@Column
         }
@@ -430,14 +346,8 @@ private fun TabPecasSn(
         uiState.motasFicha.forEach { mota ->
             SectionCard(title = "Unidade #${mota.motaId}${mota.vin?.let { " — $it" } ?: ""}") {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    // ── Peças fixas do modelo ──
                     if (mota.pecasFixas.isNotEmpty()) {
-                        Text(
-                            "Peças fixas do modelo",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = FactoryInfo
-                        )
+                        Text("Peças fixas do modelo", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = FactoryInfo)
                         mota.pecasFixas.forEach { pf ->
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
@@ -449,43 +359,17 @@ private fun TabPecasSn(
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                     }
-                    // ── Peças SN registadas na unidade ──
-                    Text(
-                        "Peças SN registadas na unidade",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = FactoryPrimary
-                    )
+                    Text("Peças SN registadas", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = FactoryPrimary)
                     if (mota.pecasSn.isEmpty()) {
                         Text("Sem peças SN registadas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         mota.pecasSn.forEach { peca ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text("Peça #${peca.idPeca}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
                                     Text("SN: ${peca.serialNumber ?: "—"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
-                                if (podeRegistar) {
-                                    IconButton(onClick = { deleteConfirm = peca.id }, modifier = Modifier.size(32.dp)) {
-                                        Icon(Icons.Filled.Close, contentDescription = "Remover", tint = FactoryAlert, modifier = Modifier.size(16.dp))
-                                    }
-                                }
                             }
-                        }
-                    }
-                    if (podeRegistar) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        OutlinedButton(
-                            onClick = { showAddDialog = mota.motaId },
-                            enabled = !uiState.actionLoading,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(14.dp))
-                            Text("  Adicionar Peça SN")
                         }
                     }
                 }
@@ -510,11 +394,10 @@ private fun TabAcoes(
     // Diálogo de confirmação genérico
     confirmDialog?.let { tipo ->
         val titulo = when (tipo) {
-            "iniciar" -> "Iniciar produção"
             "finalizar" -> "Finalizar ordem"
             "bloquear" -> "Bloquear ordem"
             "desbloquear" -> "Desbloquear ordem"
-            "embalada" -> "Marcar como embalada"
+            "embalada" -> "Marcar como pronta para expedição"
             "enviada" -> "Marcar como enviada"
             else -> "Confirmar ação"
         }
@@ -557,11 +440,10 @@ private fun TabAcoes(
                 Button(
                     onClick = {
                         when (tipo) {
-                            "iniciar" -> viewModel.iniciarOrdem()
                             "finalizar" -> viewModel.finalizarOrdem()
                             "bloquear" -> viewModel.bloquearOrdem(motivoBloqueio)
                             "desbloquear" -> viewModel.desbloquearOrdem(resolucaoDesbloqueio)
-                            "embalada" -> viewModel.marcarEmbalada()
+                            "embalada" -> viewModel.marcarProntaExpedicao()
                             "enviada" -> viewModel.marcarEnviada()
                         }
                         confirmDialog = null
@@ -597,19 +479,6 @@ private fun TabAcoes(
         }
 
         val isWorking = uiState.isUpdating || uiState.actionLoading
-
-        // ── Iniciar ordem (estado 0 → 1) ──
-        if (uiState.estadoBase == 0 && access?.canIniciarOrdem == true) {
-            Button(
-                onClick = { confirmDialog = "iniciar" },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isWorking,
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("  Iniciar produção")
-            }
-        }
 
         // ── Finalizar ordem ──
         if (!uiState.concluida && !uiState.bloqueada && access?.canFinalizarOrdem == true) {
@@ -702,7 +571,7 @@ private fun TabAcoes(
         }
 
         // Sem permissões
-        if (access?.canIniciarOrdem == false && access.canFinalizarOrdem == false && access.canBloquearOrdem == false) {
+        if (access?.canFinalizarOrdem == false && access.canBloquearOrdem == false) {
             SectionCard(title = "Permissões") {
                 Text(
                     "O teu perfil (${access.perfil.name}) não tem permissão para executar ações nesta ordem. Podes consultar os dados mas não alterar o estado.",
@@ -806,121 +675,6 @@ private fun FichaHeader(uiState: FichaOperacionalUiState) {
             }
         }
     }
-}
-
-// ─────────────────────────────────────────────────────────────
-// DIÁLOGOS
-// ─────────────────────────────────────────────────────────────
-
-@Composable
-private fun RegistarMotaDialog(onConfirm: (vin: String, cor: String) -> Unit, onDismiss: () -> Unit) {
-    var vin by remember { mutableStateOf("") }
-    var cor by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Registar unidade") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(value = vin, onValueChange = { vin = it.uppercase() }, label = { Text("VIN / Nº Quadro (opcional)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
-                OutlinedTextField(value = cor, onValueChange = { cor = it }, label = { Text("Cor *") }, modifier = Modifier.fillMaxWidth(), singleLine = true, isError = cor.isBlank())
-                if (cor.isBlank()) Text("Cor é obrigatória.", style = MaterialTheme.typography.labelSmall, color = FactoryAlert)
-            }
-        },
-        confirmButton = { Button(onClick = { onConfirm(vin, cor) }, enabled = cor.isNotBlank()) { Text("Registar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
-    )
-}
-
-@Composable
-private fun RegistarVinDialog(motaId: Int, vinAtual: String, onConfirm: (motaId: Int, vin: String) -> Unit, onDismiss: () -> Unit) {
-    var vin by remember { mutableStateOf(vinAtual) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Registar VIN") },
-        text = {
-            OutlinedTextField(
-                value = vin,
-                onValueChange = { vin = it.uppercase().take(17) },
-                label = { Text("VIN / Nº de Quadro") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                isError = vin.isBlank(),
-                supportingText = { Text("${vin.length}/17 caracteres") }
-            )
-        },
-        confirmButton = { Button(onClick = { onConfirm(motaId, vin) }, enabled = vin.isNotBlank()) { Text("Confirmar") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
-    )
-}
-
-@Composable
-private fun AddPecaSnDialog(
-    pecasDisponiveis: List<com.example.aplicacaodecontrolofabrica.data.dto.PecaDto>,
-    onConfirm: (pecaId: Int, sn: String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    var pecaIdSelecionada by remember { mutableIntStateOf(0) }
-    var sn by remember { mutableStateOf("") }
-    var pesquisaPeca by remember { mutableStateOf("") }
-
-    val pecasFiltradas = pecasDisponiveis.filter {
-        pesquisaPeca.isBlank() ||
-                (it.nome?.contains(pesquisaPeca, ignoreCase = true) == true) ||
-                (it.partNumber?.contains(pesquisaPeca, ignoreCase = true) == true)
-    }.take(20)
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Adicionar peça com número de série") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(
-                    value = pesquisaPeca,
-                    onValueChange = { pesquisaPeca = it; pecaIdSelecionada = 0 },
-                    label = { Text("Pesquisar peça") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                if (pecasFiltradas.isEmpty()) {
-                    Text("Sem peças encontradas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
-                    Column(modifier = Modifier.height(160.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        pecasFiltradas.forEach { peca ->
-                            val id = peca.idPeca ?: 0
-                            val selected = pecaIdSelecionada == id
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(containerColor = if (selected) FactoryPrimary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                                onClick = { pecaIdSelecionada = id }
-                            ) {
-                                Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Checkbox(checked = selected, onCheckedChange = { pecaIdSelecionada = if (it) id else 0 })
-                                    Column {
-                                        Text(peca.nome ?: "Peça #$id", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                                        peca.partNumber?.let { Text("PN: $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                OutlinedTextField(
-                    value = sn,
-                    onValueChange = { sn = it },
-                    label = { Text("Número de série *") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    isError = sn.isBlank()
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = { onConfirm(pecaIdSelecionada, sn) }, enabled = pecaIdSelecionada > 0 && sn.isNotBlank()) {
-                Text("Registar")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
-    )
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -63,8 +63,6 @@ fun EncomendaDetalheScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    var showCriarDialog by remember { mutableStateOf(false) }
-
     LaunchedEffect(encomendaId) { viewModel.load(encomendaId) }
 
     LaunchedEffect(uiState.actionSuccess, uiState.actionError) {
@@ -73,26 +71,6 @@ fun EncomendaDetalheScreen(
             snackbarHostState.showSnackbar(msg)
             viewModel.clearFeedback()
         }
-    }
-
-    if (showCriarDialog) {
-        AlertDialog(
-            onDismissRequest = { showCriarDialog = false },
-            title = { Text("Criar ordens de produção") },
-            text = { Text("Serão criadas ordens de produção para esta encomenda (${uiState.quantidade} unidade(s)). Confirmar?") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showCriarDialog = false
-                        viewModel.criarOrdensFromEncomenda(encomendaId)
-                    },
-                    enabled = !uiState.actionLoading
-                ) { Text("Confirmar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCriarDialog = false }) { Text("Cancelar") }
-            }
-        )
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -123,16 +101,6 @@ fun EncomendaDetalheScreen(
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
-                        if (access?.canCriarOrdemDeEncomenda == true && uiState.estado != 2) {
-                            if (uiState.actionLoading) {
-                                CircularProgressIndicator(modifier = Modifier.padding(4.dp), strokeWidth = 2.dp)
-                            } else {
-                                TextButton(onClick = { showCriarDialog = true }) {
-                                    Icon(Icons.Filled.Add, contentDescription = null)
-                                    Text("Criar ordens")
-                                }
-                            }
-                        }
                     }
                 }
 

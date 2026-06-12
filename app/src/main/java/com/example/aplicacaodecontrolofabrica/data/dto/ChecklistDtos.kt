@@ -53,9 +53,21 @@ data class ChecklistsStatusDto(
 
     @SerializedName(
         value = "controlo",
-        alternate = ["Controlo"]
+        alternate = ["Controlo", "itens", "Itens"]
     )
-    val controlo: List<ChecklistItemDto> = emptyList()
+    val controlo: List<ChecklistItemDto> = emptyList(),
+
+    @SerializedName(value = "ok", alternate = ["Ok"])
+    val ok: Boolean? = null,
+
+    @SerializedName(value = "obrigatorios", alternate = ["Obrigatorios"])
+    val obrigatorios: Int? = null,
+
+    @SerializedName(value = "total", alternate = ["Total"])
+    val total: Int? = null,
+
+    @SerializedName(value = "feitos", alternate = ["Feitos"])
+    val feitos: Int? = null
 )
 
 data class ChecklistItemDto(

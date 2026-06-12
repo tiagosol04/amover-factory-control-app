@@ -4,48 +4,38 @@ import com.example.aplicacaodecontrolofabrica.data.dto.*
 
 interface FabricaRepository {
 
-    // ── Ordens ──
-    suspend fun getOrdens(estado: Int? = null): List<OrdemProducaoDto>
-    suspend fun getOrdem(id: Int): OrdemProducaoDto
-    suspend fun getOrdemResumo(id: Int): OrdemResumoDto
-    suspend fun criarOrdensFromEncomenda(encomendaId: Int): List<Int>
-    suspend fun updateOrdemEstado(id: Int, estado: Int)
-    suspend fun iniciarOrdem(id: Int): IniciarOrdemResponse
-    suspend fun finalizarOrdem(id: Int): FinalizarOrdemResponse
-    suspend fun getMotasDaOrdem(ordemId: Int): List<MotaDto>
-    suspend fun criarMotaNaOrdem(ordemId: Int, body: CriarMotaRequest): Int
-    suspend fun getOrdemFicha(id: Int): OrdemFichaDto
-    suspend fun bloquearOrdem(id: Int, motivo: String): BloquearOrdemResponse
-    suspend fun desbloquearOrdem(id: Int, resolucao: String?): DesbloquearOrdemResponse
-    suspend fun getOrdemHistorico(id: Int): HistoricoOrdemResponse
-    suspend fun marcarEmbalada(id: Int): MarcarEmbalagemResponse
-    suspend fun marcarEnviada(id: Int): MarcarEnviadaResponse
-    suspend fun getProntosExpedicao(): ProntosExpedicaoResponse
-    suspend fun getOrdemUtilizadores(id: Int): OrdemUtilizadoresResponse
+    // ── Dashboard & Alertas ──
     suspend fun getDashboardResumo(): DashboardResumoDto
     suspend fun getAlertas(): AlertasApiResponse
 
-    // ── Motas / VIN / peças SN ──
-    suspend fun getMotas(): List<MotaDto>
-    suspend fun getMota(motaId: Int): MotaDto
-    suspend fun getMotaByVin(vin: String): MotaDto
-    suspend fun criarMotaDireto(body: CriarMotaRequest): Int
-    suspend fun updateMotaEstado(id: Int, estado: Int)
-    suspend fun updateVin(id: Int, vin: String): UpdateVinResponse
+    // ── Ordens (supervisão / controlo) ──
+    suspend fun getOrdens(estado: Int? = null): List<OrdemProducaoDto>
+    suspend fun getOrdem(id: Int): OrdemProducaoDto
+    suspend fun getOrdemResumo(id: Int): OrdemResumoDto
+    suspend fun getOrdemFicha(id: Int): OrdemFichaDto
+    suspend fun getMotasDaOrdem(ordemId: Int): List<MotaDto>
+    suspend fun finalizarOrdem(id: Int): FinalizarOrdemResponse
+    suspend fun bloquearOrdem(id: Int, motivo: String): BloquearOrdemResponse
+    suspend fun desbloquearOrdem(id: Int, resolucao: String?): DesbloquearOrdemResponse
+    suspend fun getOrdemHistorico(id: Int): HistoricoOrdemResponse
+    suspend fun getOrdemUtilizadores(id: Int): OrdemUtilizadoresResponse
+
+    // ── Controlo de qualidade ──
+    suspend fun getChecklistsDaOrdem(ordemId: Int): ChecklistsStatusDto
+    suspend fun updateChecklistControlo(ordemId: Int, checklistId: Int, value: Int)
+
+    // ── Expedição ──
+    suspend fun getProntosExpedicao(): ProntosExpedicaoResponse
+    suspend fun marcarProntaExpedicao(id: Int): MarcarEmbalagemResponse
+    suspend fun marcarEnviada(id: Int): MarcarEnviadaResponse
+
+    // ── Rastreabilidade (leitura) ──
+    suspend fun getMotaByVin(vin: String): RastreabilidadeDto
+
+    // ── Unidades / motas (leitura) ──
     suspend fun getMotaPecasSn(motaId: Int): List<MotaPecaSnDto>
     suspend fun getMotaPecasSnResumo(motaId: Int): PecasSnResumoResponse
-    suspend fun addMotaPecaSn(motaId: Int, body: AddPecaSnRequest): Int
-    suspend fun deleteMotaPecaSn(idMotaPecaSn: Int)
     suspend fun getMotaPecasFixas(motaId: Int): PecaFixaResponse
-    suspend fun updateMota(motaId: Int, body: CriarMotaRequest): MotaDto
-
-    // ── Peças ──
-    suspend fun getPecas(): List<PecaDto>
-
-    // ── Checklists ──
-    suspend fun getChecklists(): List<ChecklistDto>
-    suspend fun getChecklistsDaOrdem(ordemId: Int): ChecklistsStatusDto
-    suspend fun updateChecklistValue(ordemId: Int, tipo: String, checklistId: Int, value: Int)
 
     // ── Serviços / Manutenção / Garantias ──
     suspend fun getServicosMeta(): ServicosMetaResponse
@@ -60,10 +50,9 @@ interface FabricaRepository {
     suspend fun getProblemasFrequentes(idModelo: Int): ProblemasFrequentesResponse
     suspend fun getGarantiasByModelo(idModelo: Int): GarantiasModeloResponse
 
-    // ── Encomendas ──
+    // ── Encomendas (leitura) ──
     suspend fun getEncomendas(clienteId: Int? = null, estado: Int? = null): List<EncomendaDto>
     suspend fun getEncomenda(id: Int): EncomendaDto
-    suspend fun criarEncomenda(body: CreateEncomendaRequest): Int
 
     // ── Contexto operacional ──
     suspend fun getUtilizadores(): List<UtilizadorDto>

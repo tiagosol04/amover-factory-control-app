@@ -199,3 +199,22 @@ data class OrdemUtilizadoresResponse(
     @SerializedName(value = "utilizadores", alternate = ["Utilizadores"])
     val utilizadores: List<UtilizadorDto> = emptyList()
 )
+
+// ── Rastreabilidade ──
+
+data class RastreabilidadeDto(
+    @SerializedName(value = "mota", alternate = ["Mota"])
+    val mota: MotaDto? = null,
+
+    @SerializedName(value = "ordem", alternate = ["Ordem"])
+    val ordem: OrdemProducaoDto? = null,
+
+    @SerializedName(value = "pecasSn", alternate = ["PecasSn"])
+    val pecasSn: List<MotaPecaSnDto> = emptyList(),
+
+    @SerializedName(value = "servicos", alternate = ["Servicos"])
+    val servicos: List<ServicoDto> = emptyList(),
+
+    @SerializedName(value = "totalServicos", alternate = ["TotalServicos"])
+    val totalServicos: Int = 0
+)
