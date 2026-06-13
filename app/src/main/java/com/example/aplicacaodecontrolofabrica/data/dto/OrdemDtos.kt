@@ -84,22 +84,38 @@ data class OrdemResumoDto(
     val checklists: OrdemResumoChecklistsDto = OrdemResumoChecklistsDto()
 )
 
+// OrdensController returns nested objects: checklists.montagem.ok / embalagem.ok / controlo.ok
 data class OrdemResumoChecklistsDto(
-    @SerializedName(
-        value = "montagemOk",
-        alternate = ["MontagemOk"]
-    )
+    @SerializedName(value = "montagem", alternate = ["Montagem"])
+    val montagem: OrdemResumoChecklistSecaoDto? = null,
+
+    @SerializedName(value = "embalagem", alternate = ["Embalagem"])
+    val embalagem: OrdemResumoChecklistSecaoDto? = null,
+
+    @SerializedName(value = "controlo", alternate = ["Controlo"])
+    val controlo: OrdemResumoChecklistSecaoDto? = null,
+
+    @SerializedName(value = "prontoParaFinalizar", alternate = ["ProntoParaFinalizar"])
+    val prontoParaFinalizar: Boolean = false,
+
+    // Flat fields kept for contract compatibility
+    @SerializedName(value = "montagemOk", alternate = ["MontagemOk"])
     val montagemOk: Boolean = false,
 
-    @SerializedName(
-        value = "embalagemOk",
-        alternate = ["EmbalagemOk"]
-    )
+    @SerializedName(value = "embalagemOk", alternate = ["EmbalagemOk"])
     val embalagemOk: Boolean = false,
 
-    @SerializedName(
-        value = "controloOk",
-        alternate = ["ControloOk"]
-    )
+    @SerializedName(value = "controloOk", alternate = ["ControloOk"])
     val controloOk: Boolean = false
+)
+
+data class OrdemResumoChecklistSecaoDto(
+    @SerializedName(value = "ok", alternate = ["Ok"])
+    val ok: Boolean = false,
+    @SerializedName(value = "total", alternate = ["Total"])
+    val total: Int = 0,
+    @SerializedName(value = "feitos", alternate = ["Feitos"])
+    val feitos: Int = 0,
+    @SerializedName(value = "inicializado", alternate = ["Inicializado"])
+    val inicializado: Boolean = false
 )

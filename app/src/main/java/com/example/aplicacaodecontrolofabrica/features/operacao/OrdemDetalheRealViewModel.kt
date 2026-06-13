@@ -86,6 +86,16 @@ data class FichaOperacionalUiState(
     val avisoExpedicao: String? = null,
     val avisoHistorico: String? = null,
 
+    // Validação final via API (GET /api/controlo-fabrica/ordens/{id}/validacao-final)
+    val validacaoFinalPodeFinalizar: Boolean = false,
+    val validacaoFinalVinOk: Boolean = false,
+    val validacaoFinalPecasSnOk: Boolean = false,
+    val validacaoFinalMontagemOk: Boolean = false,
+    val validacaoFinalEmbalagemOk: Boolean = false,
+    val validacaoFinalControloOk: Boolean = false,
+    val validacaoFinalPendencias: List<String> = emptyList(),
+    val validacaoFinalErro: String? = null,
+
     val tabAtual: Int = 0
 )
 
@@ -130,6 +140,10 @@ class OrdemDetalheRealViewModel(
         val fichaDeferred = viewModelScope.async {
             runCatching { fabricaRepository.getOrdemFicha(ordemId) }.getOrNull()
         }
+        // Sempre buscar resumo: CF ficha não devolve montagemOk/embalagemOk/controloOk
+        val resumoDeferred = viewModelScope.async {
+            runCatching { fabricaRepository.getOrdemResumo(ordemId) }.getOrNull()
+        }
         val checklistsDeferred = viewModelScope.async {
             runCatching { fabricaRepository.getChecklistsDaOrdem(ordemId) }.getOrNull()
         }
@@ -138,6 +152,11 @@ class OrdemDetalheRealViewModel(
         }
         val utilizadoresDeferred = viewModelScope.async {
             runCatching { fabricaRepository.getOrdemUtilizadores(ordemId) }.getOrNull()
+        }
+        val validacaoDeferred = viewModelScope.async {
+            runCatching { fabricaRepository.getValidacaoFinal(ordemId) }
+                .onFailure { Log.w(TAG, "Validação final indisponível para ordem $ordemId", it) }
+                .getOrNull()
         }
 
         val ficha = fichaDeferred.await()
@@ -158,23 +177,23 @@ class OrdemDetalheRealViewModel(
 
         if (ficha != null) {
             numeroOrdem = ficha.numeroOrdem?.ifBlank { "Sem nº" } ?: "Sem nº"
-            modeloNome = ficha.modeloNome?.ifBlank { "Modelo por identificar" } ?: "Modelo por identificar"
-            clienteNome = ficha.clienteNome?.ifBlank { "Cliente por identificar" } ?: "Cliente por identificar"
+            // CF controller devolve modelo/cliente como objetos aninhados, não campos planos
+            modeloNome = (ficha.modeloNome ?: ficha.modelo?.nome)?.ifBlank { "Modelo por identificar" } ?: "Modelo por identificar"
+            clienteNome = (ficha.clienteNome ?: ficha.cliente?.nome)?.ifBlank { "Cliente por identificar" } ?: "Cliente por identificar"
             paisDestino = ficha.paisDestino ?: "—"
             estadoBase = ficha.estado ?: 0
             dataCriacaoIso = ficha.dataCriacao
             dataConclusaoIso = ficha.dataConclusao
-            montagemOk = ficha.montagemOk ?: false
-            embalagemOk = ficha.embalagemOk ?: false
-            controloOk = ficha.controloOk ?: false
-            totalServicos = ficha.totalServicos ?: 0
+            // CF ficha não inclui flags de OK — usar resumo (lançado em paralelo acima)
+            val resumo = resumoDeferred.await()
+            montagemOk = resumo?.checklists?.montagem?.ok ?: resumo?.checklists?.montagemOk ?: false
+            embalagemOk = resumo?.checklists?.embalagem?.ok ?: resumo?.checklists?.embalagemOk ?: false
+            controloOk = resumo?.checklists?.controlo?.ok ?: resumo?.checklists?.controloOk ?: false
+            totalServicos = ficha.totalServicos ?: resumo?.servicos ?: 0
             motasDtos = ficha.motas ?: emptyList()
         } else {
             // Fallback: chamadas individuais em paralelo
             val ordemDeferred = viewModelScope.async { fabricaRepository.getOrdem(ordemId) }
-            val resumoDeferred = viewModelScope.async {
-                runCatching { fabricaRepository.getOrdemResumo(ordemId) }.getOrNull()
-            }
             val motasDeferred = viewModelScope.async {
                 runCatching { fabricaRepository.getMotasDaOrdem(ordemId) }.getOrDefault(emptyList())
             }
@@ -199,9 +218,9 @@ class OrdemDetalheRealViewModel(
             estadoBase = ordem.estado ?: 0
             dataCriacaoIso = ordem.dataCriacao
             dataConclusaoIso = ordem.dataConclusao
-            montagemOk = resumo?.checklists?.montagemOk ?: false
-            embalagemOk = resumo?.checklists?.embalagemOk ?: false
-            controloOk = resumo?.checklists?.controloOk ?: false
+            montagemOk = resumo?.checklists?.montagem?.ok ?: resumo?.checklists?.montagemOk ?: false
+            embalagemOk = resumo?.checklists?.embalagem?.ok ?: resumo?.checklists?.embalagemOk ?: false
+            controloOk = resumo?.checklists?.controlo?.ok ?: resumo?.checklists?.controloOk ?: false
             totalServicos = resumo?.servicos ?: 0
         }
 
@@ -241,6 +260,7 @@ class OrdemDetalheRealViewModel(
         val checklistsStatus = checklistsDeferred.await()
         val historicoResponse = historicoDeferred.await()
         val utilizadoresData = utilizadoresDeferred.await()
+        val validacaoFinal = validacaoDeferred.await()
 
         val checklistsPorGrupo = checklistsStatus?.toChecklistExecucoesPorGrupo() ?: emptyMap()
 
@@ -345,6 +365,14 @@ class OrdemDetalheRealViewModel(
             historicoItems = historicoItems,
             avisoHistorico = avisoHistorico,
             utilizadoresAtribuidos = utilizadoresAtribuidos,
+            validacaoFinalPodeFinalizar = validacaoFinal?.podeFinalizar ?: false,
+            validacaoFinalVinOk = validacaoFinal?.vinOk ?: false,
+            validacaoFinalPecasSnOk = validacaoFinal?.pecasSnOk ?: false,
+            validacaoFinalMontagemOk = validacaoFinal?.montagemOk ?: false,
+            validacaoFinalEmbalagemOk = validacaoFinal?.embalagemOk ?: false,
+            validacaoFinalControloOk = validacaoFinal?.controloFinalOk ?: false,
+            validacaoFinalPendencias = validacaoFinal?.pendencias ?: emptyList(),
+            validacaoFinalErro = if (validacaoFinal == null) "Validação final não disponível — botão Finalizar desativado por segurança." else null,
             tabAtual = _uiState.value.tabAtual
         )
     }

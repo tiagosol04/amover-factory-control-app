@@ -171,29 +171,22 @@ class AlertasViewModel(
             }
 
             if (resumo != null) {
-                val montagemOk = resumo.checklists.montagemOk
-                val embalagemOk = resumo.checklists.embalagemOk
-                val controloOk = resumo.checklists.controloOk
+                // Usa formato aninhado do OrdensController (montagem.ok) com fallback para campo plano
+                val montagemOk = resumo.checklists.montagem?.ok ?: resumo.checklists.montagemOk
+                val embalagemOk = resumo.checklists.embalagem?.ok ?: resumo.checklists.embalagemOk
+                val controloOk = resumo.checklists.controlo?.ok ?: resumo.checklists.controloOk
 
                 if (montagemOk && embalagemOk && !controloOk && estado != 2) {
-                    alertas += Alerta(id = stableAlertId(ordemId, 4), titulo = "Controlo final pendente",
-                        descricao = "A ordem $numeroOrdem$contextoModelo já passou montagem e embalagem, mas falta controlo final.",
+                    alertas += Alerta(id = stableAlertId(ordemId, 4), titulo = "Controlo de qualidade pendente",
+                        descricao = "A ordem $numeroOrdem$contextoModelo está pronta para validação final de qualidade.",
                         tipo = TipoAlertaUi.QUALIDADE, severidade = SeveridadeAlertaUi.ALTA,
                         estado = EstadoAlertaUi.ABERTO, origem = OrigemAlertaUi.QUALIDADE,
                         ordemId = ordemId, modeloId = ordem.idModelo, clienteId = ordem.idCliente, dataCriacaoIso = dataRef)
                 }
 
-                if (!montagemOk && estado == 1) {
-                    alertas += Alerta(id = stableAlertId(ordemId, 5), titulo = "Montagem por validar",
-                        descricao = "A ordem $numeroOrdem$contextoModelo está em produção com checklist de montagem ainda por fechar.",
-                        tipo = TipoAlertaUi.OPERACIONAL, severidade = SeveridadeAlertaUi.MEDIA,
-                        estado = EstadoAlertaUi.ABERTO, origem = OrigemAlertaUi.FABRICA,
-                        ordemId = ordemId, modeloId = ordem.idModelo, clienteId = ordem.idCliente, dataCriacaoIso = dataRef)
-                }
-
-                if (montagemOk && !embalagemOk && estado == 1) {
-                    alertas += Alerta(id = stableAlertId(ordemId, 6), titulo = "Embalagem pendente",
-                        descricao = "A ordem $numeroOrdem$contextoModelo já concluiu montagem, mas ainda não fechou embalagem.",
+                if (!montagemOk && !embalagemOk && !controloOk && estado == 1) {
+                    alertas += Alerta(id = stableAlertId(ordemId, 5), titulo = "Ordem sem validações de produção",
+                        descricao = "A ordem $numeroOrdem$contextoModelo está em produção sem nenhuma etapa validada.",
                         tipo = TipoAlertaUi.OPERACIONAL, severidade = SeveridadeAlertaUi.MEDIA,
                         estado = EstadoAlertaUi.ABERTO, origem = OrigemAlertaUi.FABRICA,
                         ordemId = ordemId, modeloId = ordem.idModelo, clienteId = ordem.idCliente, dataCriacaoIso = dataRef)

@@ -21,13 +21,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AssignmentTurnedIn
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DirectionsBike
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -77,7 +73,7 @@ import com.example.aplicacaodecontrolofabrica.ui.theme.FactoryPrimary
 import com.example.aplicacaodecontrolofabrica.ui.theme.FactorySecondary
 import com.example.aplicacaodecontrolofabrica.ui.theme.FactoryWarning
 
-private val TABS = listOf("Geral", "Unidades", "Checklists", "Peças SN", "Ações", "Histórico")
+private val TABS = listOf("Geral", "Estado", "Qualidade", "Validação", "Histórico")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -128,11 +124,10 @@ fun FichaOperacionalScreen(
                 Box(modifier = Modifier.weight(1f)) {
                     when (tabIndex) {
                         0 -> TabGeral(uiState)
-                        1 -> TabUnidades(uiState, access, viewModel)
-                        2 -> TabChecklists(uiState, access, viewModel)
-                        3 -> TabPecasSn(uiState, access, viewModel)
-                        4 -> TabAcoes(uiState, access, viewModel)
-                        5 -> TabHistorico(uiState)
+                        1 -> TabEstado(uiState)
+                        2 -> TabQualidade(uiState, access, viewModel)
+                        3 -> TabValidacao(uiState, access, viewModel)
+                        4 -> TabHistorico(uiState)
                     }
                 }
             }
@@ -224,43 +219,73 @@ private fun TabGeral(uiState: FichaOperacionalUiState) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// TAB 1 — Unidades / VIN
+// TAB 1 — Estado da Produção
 // ─────────────────────────────────────────────────────────────
 @Composable
-private fun TabUnidades(
-    uiState: FichaOperacionalUiState,
-    access: RoleAccessUi?,
-    viewModel: OrdemDetalheRealViewModel
-) {
+private fun TabEstado(uiState: FichaOperacionalUiState) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        SectionCard(title = "Estado da Produção") {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                ProducaoStatusRow("Montagem", uiState.montagemOk)
+                ProducaoStatusRow("Embalagem", uiState.embalagemOk)
+                ProducaoStatusRow("VIN registado", uiState.unidadeRegistada && !uiState.vinPendente)
+                ProducaoStatusRow("Controlo de Qualidade", uiState.controloOk)
+            }
+        }
+
         if (uiState.motasFicha.isEmpty()) {
-            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
                 Text("Sem unidades registadas nesta ordem.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.weight(1f)) {
-                items(uiState.motasFicha, key = { it.motaId }) { mota ->
-                    Card(
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                    ) {
-                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Text("Unidade #${mota.motaId}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                                StatusChip(
-                                    status = if (mota.vin != null) StatusChipType.CONCLUIDO else StatusChipType.ATENCAO,
-                                    labelOverride = if (mota.vin != null) "VIN OK" else "Sem VIN"
-                                )
+            uiState.motasFicha.forEach { mota ->
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Text("Unidade #${mota.motaId}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            StatusChip(
+                                status = if (mota.vin != null) StatusChipType.CONCLUIDO else StatusChipType.ATENCAO,
+                                labelOverride = if (mota.vin != null) "VIN OK" else "Sem VIN"
+                            )
+                        }
+                        InfoRow("VIN", mota.vin ?: "Por registar")
+                        InfoRow("Cor", mota.cor ?: "—")
+                        InfoRow("Estado", mota.estado)
+
+                        if (mota.pecasFixas.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Peças fixas", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = FactoryInfo)
+                            mota.pecasFixas.forEach { pf ->
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(pf.nome, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                                        pf.partNumber?.let { Text("PN: $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                                    }
+                                    Text("×${pf.quantidade}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             }
-                            InfoRow("VIN", mota.vin ?: "Por registar")
-                            InfoRow("Cor", mota.cor ?: "—")
-                            InfoRow("Estado", mota.estado)
-                            InfoRow("Peças SN", "${mota.pecasSn.size} registada(s)")
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Peças SN (${mota.pecasSn.size})", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = FactoryPrimary)
+                        if (mota.pecasSn.isEmpty()) {
+                            Text("Sem peças SN registadas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        } else {
+                            mota.pecasSn.forEach { peca ->
+                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    Text("Peça #${peca.idPeca}", style = MaterialTheme.typography.bodySmall)
+                                    Text("SN: ${peca.serialNumber ?: "—"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
                         }
                     }
                 }
@@ -270,10 +295,10 @@ private fun TabUnidades(
 }
 
 // ─────────────────────────────────────────────────────────────
-// TAB 2 — Checklists
+// TAB 2 — Qualidade (controlo final editável)
 // ─────────────────────────────────────────────────────────────
 @Composable
-private fun TabChecklists(
+private fun TabQualidade(
     uiState: FichaOperacionalUiState,
     access: RoleAccessUi?,
     viewModel: OrdemDetalheRealViewModel
@@ -287,102 +312,35 @@ private fun TabChecklists(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        ChecklistGrupo(
-            titulo = "Montagem",
-            itens = uiState.checklistsMontagem,
-            tipo = "montagem",
-            podeMarcar = false,
-            isLoading = uiState.actionLoading,
-            onToggle = { _, _ -> }
-        )
-        ChecklistGrupo(
-            titulo = "Embalagem",
-            itens = uiState.checklistsEmbalagem,
-            tipo = "embalagem",
-            podeMarcar = false,
-            isLoading = uiState.actionLoading,
-            onToggle = { _, _ -> }
-        )
-        ChecklistGrupo(
-            titulo = "Controlo Final",
-            itens = uiState.checklistsControlo,
-            tipo = "controlo",
-            podeMarcar = podeMarcar,
-            isLoading = uiState.actionLoading,
-            onToggle = { checklistId, concluido -> viewModel.toggleChecklist(checklistId, concluido) }
-        )
-
-        if (uiState.checklistsMontagem.isEmpty() && uiState.checklistsEmbalagem.isEmpty() && uiState.checklistsControlo.isEmpty()) {
-            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                Text("Sem checklists carregados.\nIniciar a ordem para criar os checklists.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        SectionCard(title = "Estado de Produção (só leitura)") {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                ChecklistResumoRow("Montagem", uiState.montagemOk, uiState.checklistsMontagem.size, uiState.checklistsMontagem.count { it.concluido })
+                ChecklistResumoRow("Embalagem", uiState.embalagemOk, uiState.checklistsEmbalagem.size, uiState.checklistsEmbalagem.count { it.concluido })
             }
+        }
+
+        if (uiState.checklistsControlo.isEmpty()) {
+            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                Text("Sem checklist de controlo de qualidade disponível.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        } else {
+            ChecklistGrupo(
+                titulo = "Controlo Final",
+                itens = uiState.checklistsControlo,
+                tipo = "controlo",
+                podeMarcar = podeMarcar,
+                isLoading = uiState.actionLoading,
+                onToggle = { checklistId, concluido -> viewModel.toggleChecklist(checklistId, concluido) }
+            )
         }
     }
 }
 
 // ─────────────────────────────────────────────────────────────
-// TAB 3 — Peças SN
+// TAB 3 — Validação Final
 // ─────────────────────────────────────────────────────────────
 @Composable
-private fun TabPecasSn(
-    uiState: FichaOperacionalUiState,
-    access: RoleAccessUi?,
-    viewModel: OrdemDetalheRealViewModel
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        if (uiState.motasFicha.isEmpty()) {
-            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                Text("Sem unidades registadas.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            return@Column
-        }
-
-        uiState.motasFicha.forEach { mota ->
-            SectionCard(title = "Unidade #${mota.motaId}${mota.vin?.let { " — $it" } ?: ""}") {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (mota.pecasFixas.isNotEmpty()) {
-                        Text("Peças fixas do modelo", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = FactoryInfo)
-                        mota.pecasFixas.forEach { pf ->
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(pf.nome, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                                    pf.partNumber?.let { Text("PN: $it", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                                }
-                                Text("×${pf.quantidade}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                    }
-                    Text("Peças SN registadas", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = FactoryPrimary)
-                    if (mota.pecasSn.isEmpty()) {
-                        Text("Sem peças SN registadas.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } else {
-                        mota.pecasSn.forEach { peca ->
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text("Peça #${peca.idPeca}", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
-                                    Text("SN: ${peca.serialNumber ?: "—"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────
-// TAB 4 — Ações
-// ─────────────────────────────────────────────────────────────
-@Composable
-private fun TabAcoes(
+private fun TabValidacao(
     uiState: FichaOperacionalUiState,
     access: RoleAccessUi?,
     viewModel: OrdemDetalheRealViewModel
@@ -469,8 +427,59 @@ private fun TabAcoes(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Aviso se API de validação não respondeu
+        if (!uiState.validacaoFinalErro.isNullOrBlank()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = FactoryWarning.copy(alpha = 0.1f))
+            ) {
+                Text(
+                    uiState.validacaoFinalErro!!,
+                    modifier = Modifier.padding(10.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = FactoryWarning
+                )
+            }
+        }
+
+        // Checklist de prontidão — usa dados da API quando disponíveis
+        val temValidacaoApi = uiState.validacaoFinalErro == null
+        SectionCard(title = "Prontidão para Finalizar${if (temValidacaoApi) "" else " (calculado localmente)"}") {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (temValidacaoApi) {
+                    ProducaoStatusRow("VIN registado", uiState.validacaoFinalVinOk)
+                    ProducaoStatusRow("Peças SN verificadas", uiState.validacaoFinalPecasSnOk)
+                    ProducaoStatusRow("Montagem OK", uiState.validacaoFinalMontagemOk)
+                    ProducaoStatusRow("Embalagem OK", uiState.validacaoFinalEmbalagemOk)
+                    ProducaoStatusRow("Controlo de Qualidade OK", uiState.validacaoFinalControloOk)
+                } else {
+                    ProducaoStatusRow("Unidade registada", uiState.unidadeRegistada)
+                    ProducaoStatusRow("VIN sem pendências", uiState.unidadeRegistada && !uiState.vinPendente)
+                    ProducaoStatusRow("Montagem OK", uiState.montagemOk)
+                    ProducaoStatusRow("Embalagem OK", uiState.embalagemOk)
+                    ProducaoStatusRow("Controlo de Qualidade OK", uiState.controloOk)
+                }
+            }
+        }
+
+        // Pendências vindas da API
+        if (uiState.validacaoFinalPendencias.isNotEmpty()) {
+            SectionCard(title = "Pendências (${uiState.validacaoFinalPendencias.size})") {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    uiState.validacaoFinalPendencias.forEach { pendencia ->
+                        Text(
+                            "• $pendencia",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = FactoryWarning
+                        )
+                    }
+                }
+            }
+        }
+
         // Estado atual
-        SectionCard(title = "Estado atual") {
+        SectionCard(title = "Estado") {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 InfoRow("Estado", uiState.estadoLabel)
                 InfoRow("Próxima ação", uiState.proximaAcao)
@@ -482,7 +491,8 @@ private fun TabAcoes(
 
         // ── Finalizar ordem ──
         if (!uiState.concluida && !uiState.bloqueada && access?.canFinalizarOrdem == true) {
-            val podeFinalizarAgora = uiState.unidadeRegistada && !uiState.vinPendente && uiState.montagemOk && uiState.embalagemOk && uiState.controloOk
+            // Gate: API deve confirmar podeFinalizar; se indisponível, bloquear por segurança
+            val podeFinalizarAgora = uiState.validacaoFinalErro == null && uiState.validacaoFinalPodeFinalizar
             Button(
                 onClick = { confirmDialog = "finalizar" },
                 modifier = Modifier.fillMaxWidth(),
@@ -495,7 +505,7 @@ private fun TabAcoes(
             }
             if (!podeFinalizarAgora) {
                 Text(
-                    "Para finalizar: unidade registada, sem VIN pendente, montagem OK, embalagem OK e controlo OK. Validacao de pecas SN obrigatorias nao disponivel nesta versao.",
+                    if (uiState.validacaoFinalErro != null) "Validação da API necessária para finalizar." else "Todas as condições devem estar verificadas para finalizar.",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -720,6 +730,14 @@ private fun ChecklistGrupo(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ProducaoStatusRow(label: String, ok: Boolean) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.bodySmall)
+        StatusChip(status = if (ok) StatusChipType.CONCLUIDO else StatusChipType.ATENCAO, labelOverride = if (ok) "OK" else "Pendente")
     }
 }
 

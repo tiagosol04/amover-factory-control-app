@@ -60,6 +60,8 @@ fun DashboardScreen(
     onOpenOrdens: () -> Unit,
     onOpenEquipa: () -> Unit,
     onOpenAlertas: () -> Unit,
+    onOpenExpedicao: () -> Unit,
+    onOpenQualidade: () -> Unit = {},
     onOpenOrdemDetalhe: (Int) -> Unit,
     viewModel: DashboardRealViewModel = viewModel(factory = ViewModelFactory())
 ) {
@@ -121,7 +123,7 @@ fun DashboardScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "${uiState.totalOrdens} ordens · ${uiState.equipaAtiva} pessoas · ${uiState.bloqueadas + uiState.vinPendente + uiState.controloPendente} decisões",
+                                    text = "${uiState.totalOrdens} ordens · ${uiState.equipaAtiva} em turno · ${uiState.bloqueadas + uiState.vinPendente + uiState.controloPendente} pendências",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = Color.White.copy(alpha = 0.85f),
                                     maxLines = 1,
@@ -133,7 +135,7 @@ fun DashboardScreen(
                 }
             }
 
-            // ── KPIs 2x2 — clicáveis ──
+            // ── KPIs de supervisão 2x2 ──
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(
@@ -142,18 +144,18 @@ fun DashboardScreen(
                     ) {
                         KpiCard(
                             modifier = Modifier.weight(1f),
-                            titulo = "Bloqueadas",
-                            valor = uiState.bloqueadas.toString(),
-                            color = FactoryAlert,
-                            icon = Icons.Filled.WarningAmber,
+                            titulo = "Em Produção",
+                            valor = uiState.emProducao.toString(),
+                            color = FactoryPrimary,
+                            icon = Icons.Filled.PlayArrow,
                             onClick = onOpenOrdens
                         )
                         KpiCard(
                             modifier = Modifier.weight(1f),
-                            titulo = "VIN pendente",
-                            valor = uiState.vinPendente.toString(),
-                            color = FactoryWarning,
-                            icon = Icons.Filled.PriorityHigh,
+                            titulo = "Bloqueadas",
+                            valor = uiState.bloqueadas.toString(),
+                            color = FactoryAlert,
+                            icon = Icons.Filled.WarningAmber,
                             onClick = onOpenOrdens
                         )
                     }
@@ -163,21 +165,48 @@ fun DashboardScreen(
                     ) {
                         KpiCard(
                             modifier = Modifier.weight(1f),
-                            titulo = "Sem unidade",
-                            valor = uiState.semUnidade.toString(),
-                            color = FactoryInfo,
-                            icon = Icons.Filled.Bolt,
+                            titulo = "Pron. Validação",
+                            valor = uiState.controloPendente.toString(),
+                            color = FactoryWarning,
+                            icon = Icons.Filled.PriorityHigh,
                             onClick = onOpenOrdens
                         )
                         KpiCard(
                             modifier = Modifier.weight(1f),
-                            titulo = "Controlo pend.",
-                            valor = uiState.controloPendente.toString(),
-                            color = FactoryPrimary,
-                            icon = Icons.Filled.PlayArrow,
+                            titulo = "Concluídas",
+                            valor = uiState.concluidas.toString(),
+                            color = FactoryInfo,
+                            icon = Icons.Filled.Bolt,
                             onClick = onOpenOrdens
                         )
                     }
+                }
+            }
+
+            // ── Contadores secundários (Alertas, Serviços, Expedição) ──
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    MiniKpiCard(
+                        modifier = Modifier.weight(1f),
+                        titulo = "Alertas",
+                        valor = uiState.alertasAtivos.toString(),
+                        onClick = onOpenAlertas
+                    )
+                    MiniKpiCard(
+                        modifier = Modifier.weight(1f),
+                        titulo = "Serviços",
+                        valor = uiState.servicosEmAberto.toString(),
+                        onClick = null
+                    )
+                    MiniKpiCard(
+                        modifier = Modifier.weight(1f),
+                        titulo = "Expedições",
+                        valor = uiState.expedicoesPendentes.toString(),
+                        onClick = onOpenExpedicao
+                    )
                 }
             }
 
@@ -244,19 +273,19 @@ fun DashboardScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     QuickLink(
-                        label = "Prioridades",
+                        label = "Ordens",
                         modifier = Modifier.weight(1f),
                         onClick = onOpenOrdens
                     )
                     QuickLink(
-                        label = "Ocorrências",
+                        label = "Qualidade",
                         modifier = Modifier.weight(1f),
-                        onClick = onOpenAlertas
+                        onClick = onOpenQualidade
                     )
                     QuickLink(
-                        label = "Turno",
+                        label = "Expedição",
                         modifier = Modifier.weight(1f),
-                        onClick = onOpenEquipa
+                        onClick = onOpenExpedicao
                     )
                 }
             }
@@ -311,6 +340,43 @@ private fun KpiCard(
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = color
+            )
+        }
+    }
+}
+
+@Composable
+private fun MiniKpiCard(
+    titulo: String,
+    valor: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)?
+) {
+    Card(
+        modifier = modifier.then(
+            if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+        ),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = valor,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = titulo,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
             )
         }
     }

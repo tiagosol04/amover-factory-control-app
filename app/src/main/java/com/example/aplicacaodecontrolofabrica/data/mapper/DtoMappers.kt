@@ -106,9 +106,9 @@ fun OrdemResumoDto.toModel(): OrdemResumo =
         ordemId = ordemId,
         motas = motas,
         servicos = servicos,
-        montagemOk = checklists.montagemOk,
-        embalagemOk = checklists.embalagemOk,
-        controloOk = checklists.controloOk
+        montagemOk = checklists.montagem?.ok ?: checklists.montagemOk,
+        embalagemOk = checklists.embalagem?.ok ?: checklists.embalagemOk,
+        controloOk = checklists.controlo?.ok ?: checklists.controloOk
     )
 
 // ---------------------------------------------------------

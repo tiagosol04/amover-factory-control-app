@@ -32,6 +32,9 @@ interface ApiService {
     @GET("api/controlo-fabrica/ordens/{id}/ficha")
     suspend fun getOrdemFicha(@Path("id") id: Int): OrdemFichaDto
 
+    @GET("api/controlo-fabrica/ordens/{id}/validacao-final")
+    suspend fun getValidacaoFinal(@Path("id") id: Int): ValidacaoFinalDto
+
     @GET("api/ordens/{id}/motas")
     suspend fun getMotasDaOrdem(@Path("id") id: Int): List<MotaDto>
 

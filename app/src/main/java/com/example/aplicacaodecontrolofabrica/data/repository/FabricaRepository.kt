@@ -13,6 +13,7 @@ interface FabricaRepository {
     suspend fun getOrdem(id: Int): OrdemProducaoDto
     suspend fun getOrdemResumo(id: Int): OrdemResumoDto
     suspend fun getOrdemFicha(id: Int): OrdemFichaDto
+    suspend fun getValidacaoFinal(id: Int): ValidacaoFinalDto
     suspend fun getMotasDaOrdem(ordemId: Int): List<MotaDto>
     suspend fun finalizarOrdem(id: Int): FinalizarOrdemResponse
     suspend fun bloquearOrdem(id: Int, motivo: String): BloquearOrdemResponse

@@ -2,6 +2,18 @@ package com.example.aplicacaodecontrolofabrica.data.dto
 
 import com.google.gson.annotations.SerializedName
 
+// ── Nested objects returned by ControloFabricaController.GetFicha ──
+
+data class FichaModeloNestedDto(
+    @SerializedName(value = "Nome", alternate = ["nome"])
+    val nome: String? = null
+)
+
+data class FichaClienteNestedDto(
+    @SerializedName(value = "Nome", alternate = ["nome"])
+    val nome: String? = null
+)
+
 // ── Ficha operacional consolidada ──
 
 data class OrdemFichaDto(
@@ -26,8 +38,16 @@ data class OrdemFichaDto(
     @SerializedName(value = "modeloNome", alternate = ["ModeloNome", "nomeModelo"])
     val modeloNome: String? = null,
 
+    // CF controller returns nested "modelo": {Nome: ...} instead of flat modeloNome
+    @SerializedName(value = "modelo", alternate = ["Modelo"])
+    val modelo: FichaModeloNestedDto? = null,
+
     @SerializedName(value = "clienteNome", alternate = ["ClienteNome", "nomeCliente"])
     val clienteNome: String? = null,
+
+    // CF controller returns nested "cliente": {Nome: ...} instead of flat clienteNome
+    @SerializedName(value = "cliente", alternate = ["Cliente"])
+    val cliente: FichaClienteNestedDto? = null,
 
     @SerializedName(value = "montagemOk", alternate = ["MontagemOk"])
     val montagemOk: Boolean? = null,
@@ -38,7 +58,8 @@ data class OrdemFichaDto(
     @SerializedName(value = "controloOk", alternate = ["ControloOk"])
     val controloOk: Boolean? = null,
 
-    @SerializedName(value = "totalServicos", alternate = ["TotalServicos", "servicos"])
+    // CF controller returns "servicosCount", OrdensController returns "servicos"
+    @SerializedName(value = "totalServicos", alternate = ["TotalServicos", "servicos", "servicosCount"])
     val totalServicos: Int? = null,
 
     @SerializedName(value = "motas", alternate = ["Motas"])
@@ -49,6 +70,25 @@ data class OrdemFichaDto(
 
     @SerializedName(value = "enviada", alternate = ["Enviada"])
     val enviada: Boolean? = null
+)
+
+// ── Validação final antes de fechar ordem ──
+
+data class ValidacaoFinalDto(
+    @SerializedName(value = "podeFinalizar", alternate = ["PodeFinalizar"])
+    val podeFinalizar: Boolean = false,
+    @SerializedName(value = "vinOk", alternate = ["VinOk"])
+    val vinOk: Boolean = false,
+    @SerializedName(value = "pecasSnOk", alternate = ["PecasSnOk"])
+    val pecasSnOk: Boolean = false,
+    @SerializedName(value = "montagemOk", alternate = ["MontagemOk"])
+    val montagemOk: Boolean = false,
+    @SerializedName(value = "embalagemOk", alternate = ["EmbalagemOk"])
+    val embalagemOk: Boolean = false,
+    @SerializedName(value = "controloFinalOk", alternate = ["ControloFinalOk", "controloOk", "ControloOk"])
+    val controloFinalOk: Boolean = false,
+    @SerializedName(value = "pendencias", alternate = ["Pendencias"])
+    val pendencias: List<String> = emptyList()
 )
 
 // ── Histórico de eventos da ordem ──

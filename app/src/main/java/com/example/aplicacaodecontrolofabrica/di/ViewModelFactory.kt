@@ -8,6 +8,7 @@ import com.example.aplicacaodecontrolofabrica.features.cockpit.DashboardRealView
 import com.example.aplicacaodecontrolofabrica.features.encomendas.EncomendaDetalheViewModel
 import com.example.aplicacaodecontrolofabrica.features.encomendas.EncomendasViewModel
 import com.example.aplicacaodecontrolofabrica.features.equipa.EquipaViewModel
+import com.example.aplicacaodecontrolofabrica.features.expedicao.ExpedicaoViewModel
 import com.example.aplicacaodecontrolofabrica.features.historico.HistoricoViewModel
 import com.example.aplicacaodecontrolofabrica.features.login.AuthViewModel
 import com.example.aplicacaodecontrolofabrica.features.operacao.OrdemDetalheRealViewModel
@@ -61,6 +62,9 @@ class ViewModelFactory : ViewModelProvider.Factory {
 
             modelClass.isAssignableFrom(EncomendaDetalheViewModel::class.java) ->
                 EncomendaDetalheViewModel(repo = fabricaRepository) as T
+
+            modelClass.isAssignableFrom(ExpedicaoViewModel::class.java) ->
+                ExpedicaoViewModel(repository = fabricaRepository) as T
 
             else -> throw IllegalArgumentException("ViewModel desconhecido: ${modelClass.name}")
         }

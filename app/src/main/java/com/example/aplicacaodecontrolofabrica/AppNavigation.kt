@@ -9,10 +9,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material.icons.filled.WarningAmber
@@ -51,6 +52,7 @@ import com.example.aplicacaodecontrolofabrica.features.cockpit.DashboardScreen
 import com.example.aplicacaodecontrolofabrica.features.encomendas.EncomendaDetalheScreen
 import com.example.aplicacaodecontrolofabrica.features.encomendas.EncomendasScreen
 import com.example.aplicacaodecontrolofabrica.features.equipa.EquipaScreen
+import com.example.aplicacaodecontrolofabrica.features.expedicao.ExpedicaoScreen
 import com.example.aplicacaodecontrolofabrica.features.historico.HistoricoScreen
 import com.example.aplicacaodecontrolofabrica.features.login.AuthViewModel
 import com.example.aplicacaodecontrolofabrica.features.login.LoginScreen
@@ -62,15 +64,17 @@ import com.example.aplicacaodecontrolofabrica.features.servicos.ServicosScreen
 
 sealed class Screen(val route: String, val title: String) {
     data object Login : Screen("login", "Login")
-    data object Cockpit : Screen("cockpit", "Hoje")
-    data object Operacao : Screen("operacao", "Produção")
+    data object Cockpit : Screen("cockpit", "Dashboard")
+    data object Operacao : Screen("operacao", "Ordens")
+    data object Qualidade : Screen("qualidade", "Qualidade")
+    data object Alertas : Screen("alertas", "Alertas")
+    data object Historico : Screen("historico", "Rastreabilidade")
+    data object Expedicao : Screen("expedicao", "Expedição")
     data object Servicos : Screen("servicos", "Serviços")
-    data object Encomendas : Screen("encomendas", "Encomendas")
     data object Equipa : Screen("equipa", "Equipa")
-    data object Alertas : Screen("alertas", "Ocorrências")
-    data object Historico : Screen("historico", "Rastreio")
+    data object Encomendas : Screen("encomendas", "Encomendas")
     data object Perfil : Screen("perfil", "Perfil")
-    data object AlertaDetalhe : Screen("alerta/{alertaId}", "Ocorrência") {
+    data object AlertaDetalhe : Screen("alerta/{alertaId}", "Alerta") {
         fun create(id: Int) = "alerta/$id"
     }
     data object FichaOperacional : Screen("ordem/{ordemId}", "Ordem") {
@@ -83,7 +87,6 @@ sealed class Screen(val route: String, val title: String) {
         fun create(id: Int) = "encomenda/$id"
     }
 }
-
 
 private data class NavMainItem(
     val screen: Screen,
@@ -139,7 +142,8 @@ fun AppNavigation() {
             })
         }
 
-        // ── Main tabs ──
+        // ── Ecrãs principais ──
+
         composable(Screen.Cockpit.route) {
             AppShell(Screen.Cockpit.title, navController, authVm, access) { p ->
                 Box(Modifier.padding(p)) {
@@ -147,6 +151,8 @@ fun AppNavigation() {
                         onOpenOrdens = { navController.navigate(Screen.Operacao.route) },
                         onOpenEquipa = { navController.navigate(Screen.Equipa.route) },
                         onOpenAlertas = { navController.navigate(Screen.Alertas.route) },
+                        onOpenExpedicao = { navController.navigate(Screen.Expedicao.route) },
+                        onOpenQualidade = { navController.navigate(Screen.Qualidade.route) },
                         onOpenOrdemDetalhe = { id -> navController.navigate(Screen.FichaOperacional.create(id)) }
                     )
                 }
@@ -155,28 +161,20 @@ fun AppNavigation() {
 
         composable(Screen.Operacao.route) {
             AppShell(Screen.Operacao.title, navController, authVm, access) { p ->
-                OperacaoScreen(contentPadding = p, onOpenOrdem = { id -> navController.navigate(Screen.FichaOperacional.create(id)) })
-            }
-        }
-
-        composable(Screen.Servicos.route) {
-            AppShell(Screen.Servicos.title, navController, authVm, access) { p ->
-                ServicosScreen(contentPadding = p, onOpenServico = { id -> navController.navigate(Screen.ServicoDetalhe.create(id)) })
-            }
-        }
-
-        composable(Screen.Encomendas.route) {
-            AppShell(Screen.Encomendas.title, navController, authVm, access) { p ->
-                EncomendasScreen(
+                OperacaoScreen(
                     contentPadding = p,
-                    onOpenEncomenda = { id -> navController.navigate(Screen.EncomendaDetalhe.create(id)) }
+                    onOpenOrdem = { id -> navController.navigate(Screen.FichaOperacional.create(id)) }
                 )
             }
         }
 
-        composable(Screen.Equipa.route) {
-            AppShell(Screen.Equipa.title, navController, authVm, access) { p ->
-                EquipaScreen(contentPadding = p)
+        // Qualidade: lista de ordens com foco em controlo de qualidade
+        composable(Screen.Qualidade.route) {
+            AppShell(Screen.Qualidade.title, navController, authVm, access) { p ->
+                OperacaoScreen(
+                    contentPadding = p,
+                    onOpenOrdem = { id -> navController.navigate(Screen.FichaOperacional.create(id)) }
+                )
             }
         }
 
@@ -196,19 +194,53 @@ fun AppNavigation() {
             }
         }
 
+        composable(Screen.Expedicao.route) {
+            AppShell(Screen.Expedicao.title, navController, authVm, access) { p ->
+                ExpedicaoScreen(
+                    contentPadding = p,
+                    onOpenOrdem = { id -> navController.navigate(Screen.FichaOperacional.create(id)) }
+                )
+            }
+        }
+
+        composable(Screen.Servicos.route) {
+            AppShell(Screen.Servicos.title, navController, authVm, access) { p ->
+                ServicosScreen(
+                    contentPadding = p,
+                    onOpenServico = { id -> navController.navigate(Screen.ServicoDetalhe.create(id)) }
+                )
+            }
+        }
+
+        composable(Screen.Equipa.route) {
+            AppShell(Screen.Equipa.title, navController, authVm, access) { p ->
+                EquipaScreen(contentPadding = p)
+            }
+        }
+
+        composable(Screen.Encomendas.route) {
+            AppShell(Screen.Encomendas.title, navController, authVm, access) { p ->
+                EncomendasScreen(
+                    contentPadding = p,
+                    onOpenEncomenda = { id -> navController.navigate(Screen.EncomendaDetalhe.create(id)) }
+                )
+            }
+        }
+
         composable(Screen.Perfil.route) {
             AppShell(Screen.Perfil.title, navController, authVm, access) { p ->
                 Box(Modifier.padding(p)) { PerfilScreen(onLogout = { authVm.logout() }) }
             }
         }
 
-        // ── Detail screens ──
+        // ── Ecrãs de detalhe ──
+
         composable(
             route = Screen.AlertaDetalhe.route,
             arguments = listOf(navArgument("alertaId") { type = NavType.IntType })
         ) { entry ->
             val alertaId = entry.arguments?.getInt("alertaId") ?: 0
-            DetailShell(title = "Ocorrência", onBack = { navController.popBackStack() }) { p ->
+            DetailShell(title = "Alerta", onBack = { navController.popBackStack() }) { p ->
                 Box(Modifier.padding(p)) {
                     AlertaDetalheScreen(alertaId = alertaId, onBack = { navController.popBackStack() })
                 }
@@ -270,13 +302,12 @@ private fun AppShell(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Navegação por role — máximo 5 itens na barra para não ficar apertado
+    // Menu de fábrica: Dashboard · Ordens · Alertas · Serviços · Perfil
     val mainItems = buildList {
-        if (access.canOpenCockpit) add(NavMainItem(Screen.Cockpit, "Hoje", Icons.Filled.Home))
-        if (access.canOpenOperacao || access.canOpenProducao) add(NavMainItem(Screen.Operacao, "Produção", Icons.Filled.Flag))
-        // Serviços visíveis para todos exceto operador básico
+        if (access.canOpenCockpit) add(NavMainItem(Screen.Cockpit, "Dashboard", Icons.Filled.Home))
+        if (access.canOpenOperacao || access.canOpenProducao) add(NavMainItem(Screen.Operacao, "Ordens", Icons.Filled.Flag))
+        if (access.canOpenAlertas) add(NavMainItem(Screen.Alertas, "Alertas", Icons.Filled.WarningAmber))
         if (access.canConsultarGarantias || access.canRegistarOcorrencias) add(NavMainItem(Screen.Servicos, "Serviços", Icons.Filled.Build))
-        if (access.canOpenHistorico) add(NavMainItem(Screen.Historico, "Rastreio", Icons.Filled.QueryStats))
         if (access.canOpenPerfil) add(NavMainItem(Screen.Perfil, "Perfil", Icons.Filled.Person))
     }
 
@@ -286,17 +317,21 @@ private fun AppShell(
                 title = { Text(text = title, fontWeight = FontWeight.SemiBold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
                 actions = {
-                    // Atalhos rápidos na top bar para gestores
-                    if (access.canOpenEncomendas) {
-                        IconButton(onClick = { navController.navigate(Screen.Encomendas.route) { launchSingleTop = true } }) {
-                            Icon(Icons.Filled.Inventory, contentDescription = "Encomendas")
+                    // Qualidade — controlo de qualidade (sempre visível)
+                    IconButton(onClick = { navController.navigate(Screen.Qualidade.route) { launchSingleTop = true } }) {
+                        Icon(Icons.AutoMirrored.Filled.FactCheck, contentDescription = "Qualidade")
+                    }
+                    // Expedição — atalho rápido para chão de fábrica
+                    IconButton(onClick = { navController.navigate(Screen.Expedicao.route) { launchSingleTop = true } }) {
+                        Icon(Icons.Filled.LocalShipping, contentDescription = "Expedição")
+                    }
+                    // Rastreabilidade
+                    if (access.canOpenHistorico) {
+                        IconButton(onClick = { navController.navigate(Screen.Historico.route) { launchSingleTop = true } }) {
+                            Icon(Icons.Filled.QueryStats, contentDescription = "Rastreabilidade")
                         }
                     }
-                    if (access.canOpenAlertas) {
-                        IconButton(onClick = { navController.navigate(Screen.Alertas.route) { launchSingleTop = true } }) {
-                            Icon(Icons.Filled.WarningAmber, contentDescription = "Ocorrências")
-                        }
-                    }
+                    // Equipa
                     if (access.canOpenEquipa) {
                         IconButton(onClick = { navController.navigate(Screen.Equipa.route) { launchSingleTop = true } }) {
                             Icon(Icons.Filled.Groups, contentDescription = "Equipa")

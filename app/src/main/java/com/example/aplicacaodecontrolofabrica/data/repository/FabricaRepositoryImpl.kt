@@ -16,6 +16,7 @@ class FabricaRepositoryImpl(
     override suspend fun getOrdem(id: Int) = api.getOrdem(id)
     override suspend fun getOrdemResumo(id: Int) = api.getResumo(id)
     override suspend fun getOrdemFicha(id: Int) = api.getOrdemFicha(id)
+    override suspend fun getValidacaoFinal(id: Int) = api.getValidacaoFinal(id)
     override suspend fun getMotasDaOrdem(ordemId: Int) = api.getMotasDaOrdem(ordemId)
     override suspend fun finalizarOrdem(id: Int) = api.finalizarOrdem(id)
     override suspend fun bloquearOrdem(id: Int, motivo: String) = api.bloquearOrdem(id, BloquearOrdemRequest(motivo))

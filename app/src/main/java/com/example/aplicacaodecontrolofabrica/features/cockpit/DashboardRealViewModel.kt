@@ -14,22 +14,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class DashboardZonaEstadoUi {
-    NORMAL,
-    ATENCAO,
-    CRITICA
-}
-
-data class DashboardZonaUi(
-    val nome: String,
-    val totalOrdens: Int,
-    val totalUnidades: Int,
-    val responsavelLabel: String,
-    val riscoLabel: String,
-    val resumo: String,
-    val estado: DashboardZonaEstadoUi
-)
-
 data class DashboardOrderUi(
     val ordemId: Int,
     val numeroOrdem: String,
@@ -61,16 +45,19 @@ data class DashboardUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 
+    // Contadores de supervisão
     val totalOrdens: Int = 0,
     val emProducao: Int = 0,
     val bloqueadas: Int = 0,
+    val concluidas: Int = 0,
     val semUnidade: Int = 0,
     val controloPendente: Int = 0,
     val vinPendente: Int = 0,
+    val alertasAtivos: Int = 0,
+    val expedicoesPendentes: Int = 0,
     val equipaAtiva: Int = 0,
     val equipaIndisponivel: Int = 0,
 
-    val zonasHoje: List<DashboardZonaUi> = emptyList(),
     val acoesImediatas: List<DashboardActionUi> = emptyList(),
     val ordensPrioritarias: List<DashboardOrderUi> = emptyList(),
     val equipaHoje: List<DashboardPessoaUi> = emptyList(),
@@ -111,17 +98,13 @@ class DashboardRealViewModel(
 
     private suspend fun buildDashboard(): DashboardUiState {
         val dashResumo = runCatching { fabricaRepository.getDashboardResumo() }
-            .onFailure { Log.w("DashboardVM", "GET /api/dashboard/resumo falhou — usando fallback N+1", it) }
+            .onFailure { Log.w("DashboardVM", "GET /api/controlo-fabrica/dashboard falhou — usando fallback N+1", it) }
             .getOrNull()
 
-        return if (dashResumo != null) {
-            buildFromDashboardResumo(dashResumo)
-        } else {
-            buildFromNPlus1()
-        }
+        return if (dashResumo != null) buildFromDashboardResumo(dashResumo) else buildFromNPlus1()
     }
 
-    // ── Caminho otimizado via GET /api/dashboard/resumo ──
+    // ── Caminho otimizado via GET /api/controlo-fabrica/dashboard ──
     private suspend fun buildFromDashboardResumo(dashResumo: DashboardResumoDto): DashboardUiState {
         val utilizadoresDeferred = viewModelScope.async {
             runCatching { fabricaRepository.getUtilizadores() }
@@ -133,14 +116,20 @@ class DashboardRealViewModel(
                 .onFailure { Log.e("DashboardVM", "Falha ao carregar serviços em aberto", it) }
                 .getOrNull()
         }
+        val expedicaoDeferred = viewModelScope.async {
+            runCatching { fabricaRepository.getProntosExpedicao() }
+                .onFailure { Log.e("DashboardVM", "Falha ao carregar expedição pendente", it) }
+                .getOrNull()
+        }
+        val alertasDeferred = viewModelScope.async {
+            runCatching { fabricaRepository.getAlertas() }
+                .onFailure { Log.e("DashboardVM", "Falha ao carregar alertas", it) }
+                .getOrNull()
+        }
 
         val cards = mutableListOf<DashboardOrderUi>()
         val acoes = mutableListOf<DashboardActionUi>()
-
-        var zonaMontagemOrdens = 0; var zonaMontagemUnidades = 0
-        var zonaEmbalagemOrdens = 0; var zonaEmbalagemUnidades = 0
-        var zonaControloOrdens = 0; var zonaControloUnidades = 0
-        var zonaBloqueiosOrdens = 0; var zonaBloqueiosUnidades = 0
+        var concluidas = 0
 
         for (ordemDash in dashResumo.ordens) {
             val ordemId = ordemDash.ordemId ?: continue
@@ -156,12 +145,7 @@ class DashboardRealViewModel(
             val temControloPendente = montagemOk && embalagemOk && !controloOk && estado != 2
             val estaBloqueada = estado == 3
 
-            when {
-                estaBloqueada -> { zonaBloqueiosOrdens++; zonaBloqueiosUnidades += ordemDash.totalMotas }
-                temControloPendente -> { zonaControloOrdens++; zonaControloUnidades += ordemDash.totalMotas }
-                montagemOk && !embalagemOk -> { zonaEmbalagemOrdens++; zonaEmbalagemUnidades += ordemDash.totalMotas }
-                estado == 1 || !montagemOk -> { zonaMontagemOrdens++; zonaMontagemUnidades += ordemDash.totalMotas }
-            }
+            if (estado == 2) concluidas++
 
             val prioridadeLabel = when {
                 estaBloqueada -> "Crítica"
@@ -173,10 +157,14 @@ class DashboardRealViewModel(
             }
 
             when {
-                estaBloqueada -> acoes += DashboardActionUi(acoes.size + 1, "Desbloquear $numeroOrdem", "A ordem está parada e precisa de decisão de supervisão.", ordemId)
-                !unidadeRegistada && estado != 2 -> acoes += DashboardActionUi(acoes.size + 1, "Registar unidade em $numeroOrdem", "A ordem avançou sem unidade associada. Crítico para rastreabilidade.", ordemId)
-                temControloPendente -> acoes += DashboardActionUi(acoes.size + 1, "Fechar controlo final $numeroOrdem", "Montagem e embalagem prontas, falta a validação final.", ordemId)
-                temVinPendente -> acoes += DashboardActionUi(acoes.size + 1, "Fechar quadro/VIN de $numeroOrdem", "Existe pelo menos uma unidade com identificação por concluir.", ordemId)
+                estaBloqueada ->
+                    acoes += DashboardActionUi(acoes.size + 1, "Desbloquear $numeroOrdem", "A ordem está parada e requer decisão de supervisão.", ordemId)
+                !unidadeRegistada && estado != 2 ->
+                    acoes += DashboardActionUi(acoes.size + 1, "Unidade em falta: $numeroOrdem", "A ordem avançou sem unidade associada. Crítico para rastreabilidade.", ordemId)
+                temControloPendente ->
+                    acoes += DashboardActionUi(acoes.size + 1, "Validação final pendente: $numeroOrdem", "Produção concluída, falta fechar o controlo de qualidade.", ordemId)
+                temVinPendente ->
+                    acoes += DashboardActionUi(acoes.size + 1, "VIN por fechar: $numeroOrdem", "Existe pelo menos uma unidade com identificação por concluir.", ordemId)
             }
 
             cards += DashboardOrderUi(ordemId, numeroOrdem, modeloNome, estadoLabel, prioridadeLabel, estaBloqueada, unidadeRegistada, temVinPendente, temControloPendente)
@@ -184,6 +172,8 @@ class DashboardRealViewModel(
 
         val utilizadores = utilizadoresDeferred.await()
         val servicosData = servicosDeferred.await()
+        val expedicaoData = expedicaoDeferred.await()
+        val alertasData = alertasDeferred.await()
 
         val equipaAtiva = if (utilizadores.isNotEmpty()) {
             utilizadores.count { u -> DtoHelpers.isUserAtivo(u.ativo, u.estado) }
@@ -203,19 +193,18 @@ class DashboardRealViewModel(
             acoes += DashboardActionUi(acoes.size + 1, "Serviços em aberto: $servicosEmAbertoCount", "$servicosGarantia garantia(s), $servicosAvaria avaria(s) por tratar.")
         }
 
-        val equipaHoje = buildEquipaHoje(utilizadores)
-        val zonas = buildZonas(equipaAtiva, zonaMontagemOrdens, zonaMontagemUnidades, zonaEmbalagemOrdens, zonaEmbalagemUnidades, zonaControloOrdens, zonaControloUnidades, zonaBloqueiosOrdens, zonaBloqueiosUnidades)
-
         return DashboardUiState(
             totalOrdens = dashResumo.totalOrdens,
             emProducao = dashResumo.emProducao,
             bloqueadas = dashResumo.bloqueadas,
+            concluidas = concluidas,
             semUnidade = dashResumo.semUnidade,
             controloPendente = dashResumo.controloPendente,
             vinPendente = dashResumo.vinPendente,
+            alertasAtivos = alertasData?.alertas?.size ?: 0,
+            expedicoesPendentes = expedicaoData?.total ?: 0,
             equipaAtiva = equipaAtiva,
             equipaIndisponivel = equipaIndisponivel,
-            zonasHoje = zonas,
             acoesImediatas = acoes.take(6),
             ordensPrioritarias = cards.sortedWith(
                 compareByDescending<DashboardOrderUi> { it.bloqueada }
@@ -223,14 +212,14 @@ class DashboardRealViewModel(
                     .thenByDescending { it.prioridadeLabel == "Alta" }
                     .thenByDescending { it.vinPendente }
             ).take(5),
-            equipaHoje = equipaHoje,
+            equipaHoje = buildEquipaHoje(utilizadores),
             servicosEmAberto = servicosEmAbertoCount,
             servicosGarantia = servicosGarantia,
             servicosAvaria = servicosAvaria
         )
     }
 
-    // ── Fallback N+1 (caminho original) ──
+    // ── Fallback N+1 ──
     private suspend fun buildFromNPlus1(): DashboardUiState {
         val ordens = fabricaRepository.getOrdens()
 
@@ -242,14 +231,22 @@ class DashboardRealViewModel(
             .onFailure { Log.e("DashboardVM", "Falha ao carregar modelos", it) }
             .getOrDefault(emptyMap())
 
+        val expedicaoDeferred = viewModelScope.async {
+            runCatching { fabricaRepository.getProntosExpedicao() }
+                .onFailure { Log.e("DashboardVM", "Falha ao carregar expedição", it) }
+                .getOrNull()
+        }
+        val alertasDeferred = viewModelScope.async {
+            runCatching { fabricaRepository.getAlertas() }
+                .onFailure { Log.e("DashboardVM", "Falha ao carregar alertas", it) }
+                .getOrNull()
+        }
+
         val cards = mutableListOf<DashboardOrderUi>()
         val acoes = mutableListOf<DashboardActionUi>()
 
-        var emProducao = 0; var bloqueadas = 0; var semUnidade = 0; var controloPendente = 0; var vinPendente = 0
-        var zonaMontagemOrdens = 0; var zonaMontagemUnidades = 0
-        var zonaEmbalagemOrdens = 0; var zonaEmbalagemUnidades = 0
-        var zonaControloOrdens = 0; var zonaControloUnidades = 0
-        var zonaBloqueiosOrdens = 0; var zonaBloqueiosUnidades = 0
+        var emProducao = 0; var bloqueadas = 0; var concluidas = 0; var semUnidade = 0
+        var controloPendente = 0; var vinPendente = 0
 
         for (ordem in ordens) {
             val ordemId = ordem.idOrdemProducao ?: continue
@@ -273,24 +270,18 @@ class DashboardRealViewModel(
 
             val unidadeRegistada = motas.isNotEmpty()
             val temVinPendente = motas.any { it.numeroIdentificacao.isNullOrBlank() }
-            val montagemOk = resumo?.checklists?.montagemOk ?: false
-            val embalagemOk = resumo?.checklists?.embalagemOk ?: false
-            val controloOk = resumo?.checklists?.controloOk ?: false
+            val montagemOk = resumo?.checklists?.montagem?.ok ?: resumo?.checklists?.montagemOk ?: false
+            val embalagemOk = resumo?.checklists?.embalagem?.ok ?: resumo?.checklists?.embalagemOk ?: false
+            val controloOk = resumo?.checklists?.controlo?.ok ?: resumo?.checklists?.controloOk ?: false
             val temControloPendente = montagemOk && embalagemOk && !controloOk && estado != 2
             val estaBloqueada = estado == 3
 
             if (estado == 1) emProducao++
             if (estaBloqueada) bloqueadas++
+            if (estado == 2) concluidas++
             if (!unidadeRegistada && estado != 2) semUnidade++
             if (temControloPendente) controloPendente++
             if (temVinPendente && estado != 2) vinPendente++
-
-            when {
-                estaBloqueada -> { zonaBloqueiosOrdens++; zonaBloqueiosUnidades += motas.size }
-                temControloPendente -> { zonaControloOrdens++; zonaControloUnidades += motas.size }
-                montagemOk && !embalagemOk -> { zonaEmbalagemOrdens++; zonaEmbalagemUnidades += motas.size }
-                estado == 1 || !montagemOk -> { zonaMontagemOrdens++; zonaMontagemUnidades += motas.size }
-            }
 
             val prioridadeLabel = when {
                 estaBloqueada -> "Crítica"
@@ -302,10 +293,14 @@ class DashboardRealViewModel(
             }
 
             when {
-                estaBloqueada -> acoes += DashboardActionUi(acoes.size + 1, "Desbloquear $numeroOrdem", "A ordem está parada e precisa de decisão de supervisão.", ordemId)
-                !unidadeRegistada && estado != 2 -> acoes += DashboardActionUi(acoes.size + 1, "Registar unidade em $numeroOrdem", "A ordem avançou sem unidade associada. Crítico para rastreabilidade.", ordemId)
-                temControloPendente -> acoes += DashboardActionUi(acoes.size + 1, "Fechar controlo final $numeroOrdem", "Montagem e embalagem prontas, falta a validação final.", ordemId)
-                temVinPendente -> acoes += DashboardActionUi(acoes.size + 1, "Fechar quadro/VIN de $numeroOrdem", "Existe pelo menos uma unidade com identificação por concluir.", ordemId)
+                estaBloqueada ->
+                    acoes += DashboardActionUi(acoes.size + 1, "Desbloquear $numeroOrdem", "A ordem está parada e requer decisão de supervisão.", ordemId)
+                !unidadeRegistada && estado != 2 ->
+                    acoes += DashboardActionUi(acoes.size + 1, "Unidade em falta: $numeroOrdem", "A ordem avançou sem unidade associada. Crítico para rastreabilidade.", ordemId)
+                temControloPendente ->
+                    acoes += DashboardActionUi(acoes.size + 1, "Validação final pendente: $numeroOrdem", "Produção concluída, falta fechar o controlo de qualidade.", ordemId)
+                temVinPendente ->
+                    acoes += DashboardActionUi(acoes.size + 1, "VIN por fechar: $numeroOrdem", "Existe pelo menos uma unidade com identificação por concluir.", ordemId)
             }
 
             cards += DashboardOrderUi(ordemId, numeroOrdem, modeloNome, estadoLabel, prioridadeLabel, estaBloqueada, unidadeRegistada, temVinPendente, temControloPendente)
@@ -329,19 +324,21 @@ class DashboardRealViewModel(
             acoes += DashboardActionUi(acoes.size + 1, "Serviços em aberto: $servicosEmAberto", "$servicosGarantia garantia(s), $servicosAvaria avaria(s) por tratar.")
         }
 
-        val equipaHoje = buildEquipaHoje(utilizadores)
-        val zonas = buildZonas(equipaAtiva, zonaMontagemOrdens, zonaMontagemUnidades, zonaEmbalagemOrdens, zonaEmbalagemUnidades, zonaControloOrdens, zonaControloUnidades, zonaBloqueiosOrdens, zonaBloqueiosUnidades)
+        val expedicaoData = expedicaoDeferred.await()
+        val alertasData = alertasDeferred.await()
 
         return DashboardUiState(
             totalOrdens = ordens.size,
             emProducao = emProducao,
             bloqueadas = bloqueadas,
+            concluidas = concluidas,
             semUnidade = semUnidade,
             controloPendente = controloPendente,
             vinPendente = vinPendente,
+            alertasAtivos = alertasData?.alertas?.size ?: 0,
+            expedicoesPendentes = expedicaoData?.total ?: 0,
             equipaAtiva = equipaAtiva,
             equipaIndisponivel = equipaIndisponivel,
-            zonasHoje = zonas,
             acoesImediatas = acoes.take(6),
             ordensPrioritarias = cards.sortedWith(
                 compareByDescending<DashboardOrderUi> { it.bloqueada }
@@ -349,7 +346,7 @@ class DashboardRealViewModel(
                     .thenByDescending { it.prioridadeLabel == "Alta" }
                     .thenByDescending { it.vinPendente }
             ).take(5),
-            equipaHoje = equipaHoje,
+            equipaHoje = buildEquipaHoje(utilizadores),
             servicosEmAberto = servicosEmAberto,
             servicosGarantia = servicosGarantia,
             servicosAvaria = servicosAvaria
@@ -382,49 +379,4 @@ class DashboardRealViewModel(
                     ativo = ativo
                 )
             }
-
-    private fun buildZonas(
-        equipaAtiva: Int,
-        zonaMontagemOrdens: Int, zonaMontagemUnidades: Int,
-        zonaEmbalagemOrdens: Int, zonaEmbalagemUnidades: Int,
-        zonaControloOrdens: Int, zonaControloUnidades: Int,
-        zonaBloqueiosOrdens: Int, zonaBloqueiosUnidades: Int
-    ): List<DashboardZonaUi> = listOf(
-        DashboardZonaUi(
-            nome = "Zona de Montagem",
-            totalOrdens = zonaMontagemOrdens,
-            totalUnidades = zonaMontagemUnidades,
-            responsavelLabel = if (equipaAtiva > 0) "Supervisão ativa" else "Sem cobertura",
-            riscoLabel = when { zonaMontagemOrdens >= 4 -> "Fluxo intenso"; zonaMontagemOrdens > 0 -> "Estável"; else -> "Sem carga" },
-            resumo = "Arranque e avanço físico das ordens em curso.",
-            estado = if (zonaMontagemOrdens >= 5) DashboardZonaEstadoUi.ATENCAO else DashboardZonaEstadoUi.NORMAL
-        ),
-        DashboardZonaUi(
-            nome = "Zona de Embalagem",
-            totalOrdens = zonaEmbalagemOrdens,
-            totalUnidades = zonaEmbalagemUnidades,
-            responsavelLabel = "Acompanhamento intermédio",
-            riscoLabel = when { zonaEmbalagemOrdens >= 3 -> "Acumulação"; zonaEmbalagemOrdens > 0 -> "Com carga"; else -> "Sem carga" },
-            resumo = "Ordens que passaram montagem e aguardam fecho intermédio.",
-            estado = if (zonaEmbalagemOrdens >= 3) DashboardZonaEstadoUi.ATENCAO else DashboardZonaEstadoUi.NORMAL
-        ),
-        DashboardZonaUi(
-            nome = "Zona de Controlo Final",
-            totalOrdens = zonaControloOrdens,
-            totalUnidades = zonaControloUnidades,
-            responsavelLabel = "Qualidade / validação",
-            riscoLabel = when { zonaControloOrdens >= 2 -> "Fecho pendente"; zonaControloOrdens > 0 -> "A acompanhar"; else -> "Livre" },
-            resumo = "Último fecho antes de considerar a unidade pronta.",
-            estado = if (zonaControloOrdens >= 2) DashboardZonaEstadoUi.ATENCAO else DashboardZonaEstadoUi.NORMAL
-        ),
-        DashboardZonaUi(
-            nome = "Zona de Exceções",
-            totalOrdens = zonaBloqueiosOrdens,
-            totalUnidades = zonaBloqueiosUnidades,
-            responsavelLabel = "Supervisão / decisão",
-            riscoLabel = when { zonaBloqueiosOrdens >= 2 -> "Crítico"; zonaBloqueiosOrdens == 1 -> "Aberto"; else -> "Controlado" },
-            resumo = "Bloqueios, paragens e ordens fora do fluxo normal.",
-            estado = when { zonaBloqueiosOrdens >= 2 -> DashboardZonaEstadoUi.CRITICA; zonaBloqueiosOrdens == 1 -> DashboardZonaEstadoUi.ATENCAO; else -> DashboardZonaEstadoUi.NORMAL }
-        )
-    )
 }
