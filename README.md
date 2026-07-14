@@ -1,4 +1,3 @@
-
 ```
      ╔════════════════════════════════════════════════════════════════════╗
      ║                                                                    ║
@@ -9,14 +8,14 @@
      ║     ██║  ██║      ██║ ╚═╝ ██║ ╚██████╔╝ ╚████╔╝  ███████╗██║  ██║  ║
      ║     ╚═╝  ╚═╝      ╚═╝     ╚═╝  ╚═════╝   ╚═══╝   ╚══════╝╚═╝  ╚═╝  ║
      ║                                                                    ║
-     ║                   G E S T Ã O   D E   F Á B R I C A                ║
+     ║              F A C T O R Y   M A N A G E M E N T                  ║
      ║                                                                    ║
-     ╚═══════════════════════════════════════════════════════════════════ ╝
+     ╚════════════════════════════════════════════════════════════════════╝
 ```
 
-### Aplicação Móvel de Gestão — AJP Motorcycles
+### Mobile Factory Management App — AJP Motorcycles
 
-*Visão 360° da fábrica, na palma da mão do gestor.*
+*360° factory visibility in the manager’s pocket.*
 
 [![Android](https://img.shields.io/badge/Android-Kotlin-3DDC84?style=for-the-badge&logo=android&logoColor=white)](#)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](#)
@@ -27,130 +26,131 @@
 
 </div>
 
-## 📱 O que é
+## 📱 What it is
 
-A **Gestão de Fábrica A-MoVeR** é uma aplicação Android nativa para **gestores, supervisores e responsáveis de qualidade** da AJP Motorcycles. É o complemento móvel da plataforma web — traz toda a informação de produção, serviços, garantias e equipa para o telemóvel, permitindo decisões em tempo real sem estar preso a um computador.
+**A-MoVeR Factory Management** is a native Android application for **managers, supervisors and quality control staff** at AJP Motorcycles. It works as the mobile companion to the web platform, bringing production, service, warranty and team information directly to a smartphone, enabling real-time decision-making without being tied to a desktop computer.
 
 ```
   ┌──────────────────────────────────────────────────────────────────┐
   │                                                                  │
-  │   📊 DASHBOARD    →   Visão instantânea de toda a fábrica        │
-  │   🏭 PRODUÇÃO     →   Ordens, estados, checklists, peças         │
-  │   🔧 SERVIÇOS     →   Manutenção, avarias, garantias             │
-  │   📦 ENCOMENDAS   →   Pipeline de encomendas de clientes         │
-  │   📈 RASTREIO     →   Histórico completo por mota/VIN            │
-  │   👥 EQUIPA       →   Disponibilidade e carga de trabalho        │
-  │   👤 PERFIL       →   Sessão, roles, preferências                │
+  │   📊 DASHBOARD    →   Instant overview of the entire factory     │
+  │   🏭 PRODUCTION   →   Orders, statuses, checklists, parts        │
+  │   🔧 SERVICES     →   Maintenance, faults, warranties            │
+  │   📦 ORDERS       →   Customer order pipeline                    │
+  │   📈 TRACKING     →   Full motorcycle/VIN history                │
+  │   👥 TEAM         →   Availability and workload                  │
+  │   👤 PROFILE      →   Session, roles, preferences                │
   │                                                                  │
   └──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ⚡ Funcionalidades
+## ⚡ Features
 
-### 🎯 Dashboard Operacional
+### 🎯 Operational Dashboard
 
-O dashboard não mostra números genéricos — mostra **o que precisa de atenção agora**:
+The dashboard does not show generic numbers — it shows **what needs attention right now**:
 
-| Indicador | O que significa |
-|-----------|----------------|
-| **Ordens bloqueadas** | Produção parada — precisa de decisão imediata |
-| **Sem unidade registada** | Motas em produção sem rastreabilidade |
-| **VIN pendente** | Quadro por fechar — risco para expedição |
-| **Controlo pendente** | Quase prontas, falta validação final |
-| **Serviços em aberto** | Manutenções e garantias por resolver |
-| **Equipa indisponível** | Cobertura de turno insuficiente |
+| Indicator | Meaning |
+|-----------|---------|
+| **Blocked orders** | Production stopped — immediate decision required |
+| **No unit registered** | Motorcycles in production without traceability |
+| **Pending VIN** | Frame not closed — shipping risk |
+| **Pending control** | Almost ready, missing final validation |
+| **Open services** | Maintenance and warranty cases to resolve |
+| **Unavailable team members** | Insufficient shift coverage |
 
-O dashboard calcula **ações imediatas** e ordena por prioridade. As zonas de fábrica (Montagem, Embalagem, Controlo, Exceções) mostram carga em tempo real.
+The dashboard calculates **immediate actions** and sorts them by priority. Factory areas such as Assembly, Packaging, Control and Exceptions show real-time workload.
 
-### 🏭 Produção
+### 🏭 Production
 
-- Lista de ordens com filtros (estado, modelo, prioridade)
-- **Ficha Operacional** completa por ordem:
-  - Gates de rastreabilidade (Unidade ✓ → VIN ✓ → Qualidade ✓)
-  - Estado dos checklists (montagem, embalagem, controlo)
-  - Contexto (cliente, modelo, destino)
-  - **Iniciar** e **Finalizar** ordem via API com validação completa
-- Resumo de risco e próxima ação sugerida
+- Order list with filters by status, model and priority
+- Complete **Operational Sheet** per order:
+  - Traceability gates: Unit ✓ → VIN ✓ → Quality ✓
+  - Checklist status: assembly, packaging and control
+  - Context: customer, model and destination
+  - **Start** and **Finalize** production orders through the API with full validation
+- Risk summary and suggested next action
 
-### 🔧 Serviços, Manutenção & Garantias
+### 🔧 Services, Maintenance & Warranties
 
-Módulo completo de pós-venda:
+Complete after-sales module:
 
 ```
                     ┌──────────────────┐
-                    │   LISTA SERVIÇOS │
-                    │  KPIs + Filtros  │
-                    │  + Pesquisa VIN  │
+                    │   SERVICE LIST   │
+                    │  KPIs + Filters  │
+                    │   + VIN Search   │
                     └────────┬─────────┘
                              │
                     ┌────────▼─────────┐
-                    │ DETALHE SERVIÇO  │
+                    │ SERVICE DETAILS  │
                     │ ┌──────────────┐ │
-                    │ │ Info da mota │ │
-                    │ │ Tipo/Estado  │ │
-                    │ │ Peças alter. │ │
-                    │ │ Notas        │ │
+                    │ │ Vehicle info │ │
+                    │ │ Type/Status  │ │
+                    │ │ Changed parts│ │
+                    │ │ Notes        │ │
                     │ └──────────────┘ │
                     │ ┌──────────────┐ │
-                    │ │ Problemas    │ │
-                    │ │ frequentes   │ │
-                    │ │ do modelo    │ │
+                    │ │ Frequent     │ │
+                    │ │ problems by  │ │
+                    │ │ model        │ │
                     │ └──────────────┘ │
                     │ ┌──────────────┐ │
-                    │ │   Ações:     │ │
-                    │ │ Iniciar      │ │
-                    │ │ Concluir     │ │
+                    │ │   Actions:   │ │
+                    │ │ Start        │ │
+                    │ │ Complete     │ │
                     │ └──────────────┘ │
                     └──────────────────┘
 ```
 
-**8 tipos de serviço**: Manutenção, Avaria, Garantia, Inspeção, Diagnóstico, Preparação/Entrega, Campanha Técnica, Outro
+**8 service types**: Maintenance, Fault, Warranty, Inspection, Diagnosis, Preparation/Delivery, Technical Campaign, Other.
 
-**Análise por modelo**: problemas frequentes agrupados + total de garantias — permite identificar padrões e tomar decisões de engenharia.
+**Model analysis**: grouped frequent problems + total warranties — helping identify patterns and support engineering decisions.
 
-### 📦 Encomendas
+### 📦 Orders
 
-Visão do pipeline comercial:
-- KPIs: Pendentes / Em produção / Concluídas
-- Cliente, modelo, quantidade, data de entrega
-- Acessível via atalho na top bar (para gestores/admin)
+Commercial pipeline overview:
 
-### 📈 Rastreio (Histórico)
+- KPIs: Pending / In Production / Completed
+- Customer, model, quantity and delivery date
+- Accessible through a top-bar shortcut for managers/admin users
 
-- Pesquisa por ordem, VIN ou destino
-- Filtros: Com VIN, Concluídas, Com serviços
-- Resumo técnico por mota: modelo, VIN, país, serviços, estado dos checklists
+### 📈 Tracking / History
 
-### 🔐 Sistema de Roles
+- Search by production order, VIN or destination
+- Filters: With VIN, Completed, With services
+- Technical summary per motorcycle: model, VIN, country, services and checklist status
 
-A app adapta-se ao perfil do utilizador:
+### 🔐 Role System
 
-| Perfil | Dashboard | Produção | Serviços | Encomendas | Equipa | Rastreio |
-|--------|:---------:|:--------:|:--------:|:----------:|:------:|:--------:|
-| **Administração** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+The app adapts to the user profile:
+
+| Role | Dashboard | Production | Services | Orders | Team | Tracking |
+|------|:---------:|:----------:|:--------:|:------:|:----:|:--------:|
+| **Administration** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Supervisor** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Qualidade** | ✅ | ✅ | ✅ | — | ✅ | ✅ |
-| **Pós-venda** | — | ✅ | ✅ | — | ✅ | ✅ |
-| **Operador** | — | ✅ | ✅ | — | ✅ | — |
+| **Quality** | ✅ | ✅ | ✅ | — | ✅ | ✅ |
+| **After-sales** | — | ✅ | ✅ | — | ✅ | ✅ |
+| **Operator** | — | ✅ | ✅ | — | ✅ | — |
 
-A bottom bar mostra apenas os módulos a que o perfil tem acesso. Atalhos na top bar para encomendas, ocorrências e equipa aparecem apenas para quem pode vê-los.
+The bottom navigation bar only displays the modules available to each role. Top-bar shortcuts for orders, incidents and team management are only shown to users with permission to access them.
 
 ---
 
-## 🏗 Arquitetura
+## 🏗 Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      UI LAYER                                │
-│   Jetpack Compose · Material 3 · Navegação por Roles        │
+│   Jetpack Compose · Material 3 · Role-Based Navigation      │
 │                                                              │
-│   ┌───────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐   │
-│   │ Dashboard │ │ Produção │ │ Serviços │ │ Encomendas │   │
-│   └───────────┘ └──────────┘ └──────────┘ └────────────┘   │
+│   ┌───────────┐ ┌────────────┐ ┌──────────┐ ┌──────────┐   │
+│   │ Dashboard │ │ Production │ │ Services │ │  Orders  │   │
+│   └───────────┘ └────────────┘ └──────────┘ └──────────┘   │
 │   ┌───────────┐ ┌──────────┐ ┌──────────┐                  │
-│   │  Rastreio │ │  Equipa  │ │  Perfil  │                  │
+│   │ Tracking  │ │  Team    │ │ Profile  │                  │
 │   └───────────┘ └──────────┘ └──────────┘                  │
 ├─────────────────────────────────────────────────────────────┤
 │                   VIEWMODEL LAYER                            │
@@ -159,83 +159,83 @@ A bottom bar mostra apenas os módulos a que o perfil tem acesso. Atalhos na top
 │   AlertasVM · HistoricoVM · EquipaVM · PerfilRealVM          │
 ├─────────────────────────────────────────────────────────────┤
 │                   REPOSITORY LAYER                           │
-│   FabricaRepository (interface) → FabricaRepositoryImpl      │
-│   AuthRepository (interface) → AuthRepositoryImpl            │
+│   FabricaRepository interface → FabricaRepositoryImpl        │
+│   AuthRepository interface → AuthRepositoryImpl              │
 ├─────────────────────────────────────────────────────────────┤
 │                    NETWORK LAYER                             │
 │   Retrofit 2 · OkHttp · JWT Interceptor · DataStore          │
-│   ApiService (65+ endpoints mapeados)                        │
+│   ApiService with 65+ mapped endpoints                       │
 ├─────────────────────────────────────────────────────────────┤
 │                     BACKEND                                  │
-│   API A-MoVeR (ASP.NET Core) · SQL Server · Identity + JWT  │
+│   A-MoVeR API · ASP.NET Core · SQL Server · Identity + JWT  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Princípios
+### Principles
 
-- **MVVM** com separação completa UI ↔ Lógica ↔ Dados
-- **StateFlow** para estado reativo — a UI recompõe automaticamente
-- **Repository Pattern** — a UI nunca toca na API diretamente
-- **Role-Based Access** — navegação e funcionalidades adaptam-se ao perfil JWT
-- **Offline-Resilient** — token persiste em DataStore, sessão sobrevive a reinícios
+- **MVVM** with full separation between UI, logic and data
+- **StateFlow** for reactive state management — the UI automatically recomposes
+- **Repository Pattern** — the UI never communicates directly with the API
+- **Role-Based Access** — navigation and features adapt to the JWT user profile
+- **Offline-Resilient Session** — the token is persisted in DataStore and survives app restarts
 
 ---
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
 ```
 app/src/main/java/com/example/aplicacaodecontrolofabrica/
 │
 ├── auth/
-│   ├── AuthDataStore.kt              ← Persistência JWT
-│   ├── AuthHeaderInterceptor.kt      ← Injeta token nos pedidos
-│   ├── AuthFailureInterceptor.kt     ← Trata 401/403
-│   └── UserSession.kt               ← Dados da sessão
+│   ├── AuthDataStore.kt              ← JWT persistence
+│   ├── AuthHeaderInterceptor.kt      ← Injects token into requests
+│   ├── AuthFailureInterceptor.kt     ← Handles 401/403 responses
+│   └── UserSession.kt                ← Session data
 │
 ├── data/
 │   ├── dto/
-│   │   ├── AuthDtos.kt              ← Login/Me
-│   │   ├── OrdemDtos.kt             ← Ordens + Resumo
-│   │   ├── ServicoDtos.kt           ← 15+ DTOs de serviços ★
-│   │   ├── EncomendasAlertasDto.kt  ← Encomendas
-│   │   ├── ChecklistDtos.kt        ← Checklists
-│   │   ├── MotaPecasDtos.kt        ← Motas + Peças SN
-│   │   ├── UtilizadorDtos.kt       ← Utilizadores + Associações
-│   │   ├── ModelosDtos.kt          ← Modelos de mota
-│   │   ├── ClientesDtos.kt         ← Clientes
-│   │   └── ExtraDtos.kt            ← Requests genéricos
-│   ├── model/                       ← Modelos de domínio UI
-│   │   ├── Servico.kt              ← 8 tipos, 3 estados, cobertura
-│   │   ├── RoleAccessUi.kt         ← 6 perfis operacionais ★
-│   │   ├── Alerta.kt               ← Ocorrências com severidade
+│   │   ├── AuthDtos.kt               ← Login/Me
+│   │   ├── OrdemDtos.kt              ← Orders + summary
+│   │   ├── ServicoDtos.kt            ← 15+ service DTOs ★
+│   │   ├── EncomendasAlertasDto.kt   ← Orders
+│   │   ├── ChecklistDtos.kt          ← Checklists
+│   │   ├── MotaPecasDtos.kt          ← Motorcycles + serial-numbered parts
+│   │   ├── UtilizadorDtos.kt         ← Users + associations
+│   │   ├── ModelosDtos.kt            ← Motorcycle models
+│   │   ├── ClientesDtos.kt           ← Customers
+│   │   └── ExtraDtos.kt              ← Generic requests
+│   ├── model/                        ← UI domain models
+│   │   ├── Servico.kt                ← 8 types, 3 states, coverage
+│   │   ├── RoleAccessUi.kt           ← 6 operational profiles ★
+│   │   ├── Alerta.kt                 ← Incidents with severity
 │   │   └── ...
 │   ├── mapper/
-│   │   ├── DtoHelpers.kt           ← Conversões seguras DTO→UI
-│   │   └── DtoMappers.kt           ← Mapeamentos complexos
+│   │   ├── DtoHelpers.kt             ← Safe DTO → UI conversions
+│   │   └── DtoMappers.kt             ← Complex mappings
 │   └── repository/
-│       ├── FabricaRepository.kt     ← Interface (40+ métodos)
-│       ├── FabricaRepositoryImpl.kt ← Implementação
-│       ├── AuthRepository.kt        ← Interface auth
-│       ├── AuthRepositoryImpl.kt    ← Implementação auth
-│       └── ServiceLocator.kt        ← DI manual
+│       ├── FabricaRepository.kt      ← Interface with 40+ methods
+│       ├── FabricaRepositoryImpl.kt  ← Implementation
+│       ├── AuthRepository.kt         ← Auth interface
+│       ├── AuthRepositoryImpl.kt     ← Auth implementation
+│       └── ServiceLocator.kt         ← Manual dependency injection
 │
 ├── features/
 │   ├── cockpit/
-│   │   ├── Dashboard.kt            ← 515 linhas de UI ★
-│   │   └── DashboardRealViewModel.kt ← Zonas, KPIs, ações
+│   │   ├── Dashboard.kt              ← 515 lines of UI ★
+│   │   └── DashboardRealViewModel.kt ← Zones, KPIs and actions
 │   ├── operacao/
-│   │   ├── OperacaoScreen.kt       ← Lista de ordens
-│   │   ├── FichaOperacionalScreen.kt ← Detalhe + iniciar/finalizar ★
-│   │   ├── OrdensRealViewModel.kt   ← Lista com filtros
-│   │   └── OrdemDetalheRealViewModel.kt ← Iniciar/Finalizar/VIN ★
-│   ├── servicos/                    ★ NOVO
-│   │   ├── ServicosScreen.kt        ← Lista + KPIs + filtros
-│   │   ├── ServicosViewModel.kt     ← Pesquisa + filtros
-│   │   ├── ServicoDetalheScreen.kt  ← Detalhe + problemas modelo
-│   │   └── ServicoDetalheViewModel.kt ← Carrega serviço + análise
-│   ├── encomendas/                  ★ NOVO
-│   │   ├── EncomendasScreen.kt      ← Pipeline de encomendas
-│   │   └── EncomendasViewModel.kt   ← Resolve clientes/modelos
+│   │   ├── OperacaoScreen.kt         ← Order list
+│   │   ├── FichaOperacionalScreen.kt ← Details + start/finalize ★
+│   │   ├── OrdensRealViewModel.kt    ← List with filters
+│   │   └── OrdemDetalheRealViewModel.kt ← Start/Finalize/VIN ★
+│   ├── servicos/                     ★ NEW
+│   │   ├── ServicosScreen.kt         ← List + KPIs + filters
+│   │   ├── ServicosViewModel.kt      ← Search + filters
+│   │   ├── ServicoDetalheScreen.kt   ← Details + model problems
+│   │   └── ServicoDetalheViewModel.kt ← Loads service + analysis
+│   ├── encomendas/                   ★ NEW
+│   │   ├── EncomendasScreen.kt       ← Order pipeline
+│   │   └── EncomendasViewModel.kt    ← Resolves customers/models
 │   ├── alertas/
 │   ├── historico/
 │   ├── equipa/
@@ -243,117 +243,120 @@ app/src/main/java/com/example/aplicacaodecontrolofabrica/
 │   └── login/
 │
 ├── network/
-│   ├── ApiService.kt               ← 65+ endpoints ★
-│   ├── ApiModule.kt                ← Configuração Retrofit
-│   ├── ApiConfig.kt                ← URL base
-│   └── UiErrors.kt                 ← Tratamento de erros
+│   ├── ApiService.kt                 ← 65+ endpoints ★
+│   ├── ApiModule.kt                  ← Retrofit configuration
+│   ├── ApiConfig.kt                  ← Base URL
+│   └── UiErrors.kt                   ← Error handling
 │
 ├── ui/
-│   ├── components/                  ← 8 componentes reutilizáveis
-│   └── theme/                       ← Material 3 customizado
+│   ├── components/                   ← 8 reusable components
+│   └── theme/                        ← Custom Material 3 theme
 │
 ├── di/
-│   └── ViewModelFactory.kt         ← 11 ViewModels registados
+│   └── ViewModelFactory.kt           ← 11 registered ViewModels
 │
-├── AppNavigation.kt                ← 10 rotas + role-based nav ★
+├── AppNavigation.kt                  ← 10 routes + role-based navigation ★
 └── MainActivity.kt
 ```
 
 ---
 
-## 🔌 Cobertura da API
+## 🔌 API Coverage
 
-A app consome **65+ endpoints** da API A-MoVeR:
+The app consumes **65+ endpoints** from the A-MoVeR API:
 
-| Módulo | Endpoints | Descrição |
-|--------|:---------:|-----------|
-| **Auth** | 2 | Login JWT + perfil |
-| **Ordens** | 9 | CRUD + iniciar + finalizar + resumo + motas |
-| **Motas** | 10 | CRUD + VIN + peças SN + resumo + estado |
-| **Checklists** | 4 | Por ordem, toggle individual por tipo |
-| **Serviços** | 14 | CRUD + estados + peças alteradas + histórico por mota/VIN/modelo + problemas frequentes + garantias |
-| **Encomendas** | 4 | CRUD + filtros |
-| **Utilizadores** | 5 | CRUD + motas associadas + status |
-| **Modelos** | 2 | Lista + detalhe |
-| **Clientes** | 2 | Lista + detalhe |
-| **Peças** | 1 | Catálogo |
+| Module | Endpoints | Description |
+|--------|:---------:|-------------|
+| **Auth** | 2 | JWT login + user profile |
+| **Orders** | 9 | CRUD + start + finalize + summary + motorcycles |
+| **Motorcycles** | 10 | CRUD + VIN + serial-numbered parts + summary + status |
+| **Checklists** | 4 | Per order, individual toggle by checklist type |
+| **Services** | 14 | CRUD + statuses + changed parts + history by motorcycle/VIN/model + frequent problems + warranties |
+| **Customer Orders** | 4 | CRUD + filters |
+| **Users** | 5 | CRUD + assigned motorcycles + status |
+| **Models** | 2 | List + detail |
+| **Customers** | 2 | List + detail |
+| **Parts** | 1 | Catalog |
 
 ---
 
 ## 🚀 Setup
 
-### Pré-requisitos
+### Requirements
 
-- Android Studio Hedgehog+ (2024.x)
+- Android Studio Hedgehog+ or newer
 - Kotlin 1.9+ / Compose BOM 2024.09
-- API A-MoVeR a correr (porta 5137)
+- A-MoVeR API running locally on port `5137`
 
-### Configuração
+### Configuration
 
-1. **Clonar o repositório**
-2. **Verificar URL da API** em `build.gradle.kts`:
-   ```kotlin
-   buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5137/\"")
-   ```
+1. **Clone the repository**
+2. **Check the API URL** in `build.gradle.kts`:
+
+```kotlin
+buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:5137/\"")
+```
+
 3. **Build & Run**
-4. **Login** com credenciais da plataforma web (mesmo sistema Identity)
+4. **Log in** using the same credentials as the web platform, backed by the same Identity system
 
 ---
 
-## 🧩 Relação com o Ecossistema
+## 🧩 Ecosystem Relationship
 
 ```
   ┌─────────────────────────┐
-  │     APP WEB (Desktop)   │  ← Gestão completa: encomendas,
-  │     ASP.NET Core MVC    │     modelos, peças, documentos,
-  │     + Razor Views       │     compras, material recebido
+  │    WEB APP Desktop      │  ← Full management: orders,
+  │    ASP.NET Core MVC     │     models, parts, documents,
+  │    + Razor Views        │     purchases, received material
   └───────────┬─────────────┘
               │
   ┌───────────▼─────────────┐
-  │      API A-MoVeR        │  ← Camada central de dados
+  │      A-MoVeR API        │  ← Central data layer
   │      ASP.NET Core       │     JWT Auth · SQL Server
-  │      Web API            │     65+ endpoints REST
+  │      Web API            │     65+ REST endpoints
   └───────────┬─────────────┘
               │
     ┌─────────┴──────────┐
     │                    │
     ▼                    ▼
   ┌────────────┐   ┌─────────────────┐
-  │ APP GESTÃO │   │ APP LINHA       │
-  │ (este app) │   │ DE MONTAGEM     │
+  │ MANAGEMENT │   │ ASSEMBLY LINE   │
+  │ APP        │   │ APP             │
   │            │   │                 │
-  │ Gestores   │   │ Operadores      │
-  │ Supervisão │   │ Chão de fábrica │
-  │ Qualidade  │   │ Tablet/Scanner  │
+  │ Managers   │   │ Operators       │
+  │ Supervision│   │ Shop floor      │
+  │ Quality    │   │ Tablet/Scanner  │
   └────────────┘   └─────────────────┘
 ```
 
-A **App de Gestão** e a **App de Linha de Montagem** são complementares:
-- A app de gestão dá a **visão macro** — dashboard, métricas, decisões
-- A app de linha dá o **controlo micro** — peça a peça, checklist a checklist
-- Ambas lêem e escrevem nos mesmos dados via API
-- Uma alteração na linha aparece no dashboard do gestor em tempo real
+The **Management App** and the **Assembly Line App** are complementary:
+
+- The management app provides the **macro view** — dashboard, metrics and decisions
+- The assembly line app provides the **micro control** — part by part, checklist by checklist
+- Both read and write to the same data through the API
+- A change on the assembly line appears on the manager’s dashboard in real time
 
 ---
 
 ## 🔮 Roadmap
 
-- [ ] Push notifications para alertas críticos (ordens bloqueadas, garantias)
-- [ ] Gráficos de produção (motas/semana, tempo médio por ordem)
-- [ ] Modo offline com sync automático
-- [ ] Exportação de relatórios PDF
-- [ ] Integração com PHC (faturação) para evitar duplicação de dados
-- [ ] Scan de QR Code para acesso rápido a ordem/mota
-- [ ] Widget Android para KPIs no home screen
+- [ ] Push notifications for critical alerts such as blocked orders and warranties
+- [ ] Production charts: motorcycles per week, average time per order
+- [ ] Offline mode with automatic sync
+- [ ] PDF report export
+- [ ] PHC integration for billing and duplicate-data reduction
+- [ ] QR Code scanning for quick access to an order or motorcycle
+- [ ] Android widget for home-screen KPIs
 
 ---
 
 <div align="center">
 
 ```
-  A fábrica na palma da mão.
+  The factory in your pocket.
   
-  AJP Motorcycles × Projeto A-MoVeR
+  AJP Motorcycles × A-MoVeR Project
   Penafiel, Portugal · 2025
 ```
 
