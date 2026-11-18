@@ -339,6 +339,16 @@ The **Management App** and the **Assembly Line App** are complementary:
 
 ---
 
+### Related repositories
+
+| Repository | Role |
+|---|---|
+| [amover-lcm-backend-api](https://github.com/tiagosol04/amover-lcm-backend-api) | ASP.NET Core REST API + SQL Server consumed by this app |
+| [amover-assembly-line-app](https://github.com/tiagosol04/amover-assembly-line-app) | Android app for assembly-line operators |
+| **amover-factory-control-app** | Android app for managers, supervisors and quality (this repository) |
+
+---
+
 ## 🔮 Roadmap
 
 - [ ] Push notifications for critical alerts such as blocked orders and warranties

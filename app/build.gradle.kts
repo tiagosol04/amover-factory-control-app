@@ -29,7 +29,6 @@ android {
         release {
             isMinifyEnabled = false
             // OBRIGATÓRIO: definir URL real do servidor de produção antes de publicar.
-            // Exemplo: buildConfigField("String", "API_BASE_URL", "\"https://api.myfulgora.ajp.pt/\"")
             buildConfigField("String", "API_BASE_URL", "\"https://CONFIGURAR_URL_PRODUCAO_AQUI/\"")
             // Em produção não deve existir tráfego HTTP em claro
             manifestPlaceholders["usesCleartextTraffic"] = "false"
